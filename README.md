@@ -1,223 +1,216 @@
 # Mail System 邮件系统
 
-## 项目简介
+Java Web 综合实训项目
 
-本项目为 Java Web 实训项目，目标是开发一个简易邮件系统，实现：
+---
 
-- 用户登录注册
-- 邮件发送
-- 收件箱
-- 文件附件上传
+# 项目简介
+
+本项目是一套简易邮件管理系统，基于前后端分离架构开发。  
+主要实现用户账号管理、邮件收发、附件上传、垃圾邮件识别等基础功能，并预留 AI 辅助能力扩展接口。
+
+## 核心功能
+
+- 用户注册、登录
+- 邮件撰写、发送、接收
+- 收件箱管理
+- 邮件附件上传
 - 垃圾邮件识别
-- AI 辅助功能（后续）
+- AI 辅助功能（后续迭代开发）
 
 ---
 
 # 技术栈
 
-## 后端
+## 后端技术
 
-- Java 17
-- Spring Boot 3
-- MySQL
-- JPA / Hibernate
-- Maven
+- 编程语言：Java 17
+- 框架：Spring Boot 3
+- 数据库：MySQL 8.0
+- 持久层：Spring Data JPA / Hibernate
+- 项目构建：Maven
 
-## 前端
+## 前端技术
 
-- Vue 3
-- Vite
-- Element Plus
-- Axios
+- 框架：Vue 3 + Vite
+- UI 组件库：Element Plus
+- 网络请求：Axios
 
-## AI / Python
+## AI 扩展模块
 
-- Python
-- 朴素贝叶斯垃圾邮件分类
-- 大模型 API（DeepSeek/OpenAI）
+- 编程语言：Python
+- 算法：朴素贝叶斯（垃圾邮件分类）
+- 大模型：DeepSeek / OpenAI API 对接
 
 ---
 
-# 项目目录结构
+# 整体目录结构
 
 ```text
 mail_system
-│
-├── backend                # SpringBoot 后端
-│
-├── frontend               # Vue3 前端
-│
-├── docs                   # 文档
-│
-├── sql                    # 数据库 SQL 文件
-│
-├── test                   # 测试相关文件
-│
-└── README.md
+├── backend        # SpringBoot 后端项目
+├── frontend       # Vue3 前端项目
+├── docs           # 项目相关文档
+├── sql            # 数据库初始化脚本
+├── test           # 测试相关文件
+└── README.md      # 项目说明文档
+```
 
-# 开发目录说明（重要）
+---
 
-## backend 后端目录
+# 各模块目录与开发分工
+
+## 一、后端 backend
 
 ```text
 backend
-├── src/main/java/com/example/backend
-│   ├── controller     # 接口层
-│   ├── service        # 业务逻辑
-│   ├── repository     # JPA数据库操作
-│   ├── entity         # 数据库实体类
-│   └── config         # 配置类
-后端 A
+└── src/main/java/com/example/backend
+    ├── controller     # 接口层：接收前端请求
+    ├── service        # 业务逻辑层
+    ├── repository     # 数据访问层（JPA）
+    ├── entity         # 数据库实体类
+    ├── config         # 全局配置类
+    └── ai             # Python 调用、大模型、垃圾邮件识别模块
+```
 
-负责：
+### 人员分工
 
-entity/
-repository/
+#### 后端 A
 
-主要内容：
+- 负责目录：`entity`、`repository`
+- 工作内容：数据库表设计、用户实体、邮件实体、数据访问层开发
 
-用户表
-邮件表
-数据库设计
+#### 后端 B
 
-后端 B
+- 负责目录：`controller`、`service`
+- 工作内容：业务逻辑编写、接口开发、邮件发送、文件上传功能实现
 
-负责：
+#### 后端 C
 
-controller/
-service/
+- 负责目录：`ai`
+- 工作内容：Python 垃圾邮件分类、大模型 API 对接与调用
 
-主要内容：
+---
 
-文件上传
-邮件发送接口
-SpringBoot接口开发
-
-后端 C
-
-负责：
-
-backend/python/
-
-或者：
-
-backend/ai/
-
-主要内容：
-
-Python垃圾邮件识别
-大模型API
-
-##frontend 前端目录
+## 二、前端 frontend
 
 ```text
 frontend
-├── src
-│   ├── views          # 页面
-│   ├── components     # 组件
-│   ├── api            # Axios接口
-│   ├── router         # 路由
-│   └── assets         # 静态资源
-前端 D
+└── src
+    ├── views         # 页面视图
+    ├── components    # 公共组件
+    ├── api           # Axios 请求封装
+    ├── router        # 路由配置
+    └── assets        # 静态资源（图片、样式等）
+```
 
-负责：
+### 人员分工
 
-views/
-components/
+#### 前端 D
 
-主要内容：
+- 负责目录：`views`、`components`
+- 工作内容：登录页、收件箱、写信页等页面及公共组件开发
 
-登录页
-收件箱
-写信页
-前端 E
+#### 前端 E
 
-负责：
+- 负责目录：`api`、`router`
+- 工作内容：路由配置、Axios 接口封装、前后端接口联调
 
-api/
-router/
+---
 
-主要内容：
+## 三、文档 & 数据库 & 测试
 
-Axios请求
-前后端联调
-API字段
-
-##docs 文档目录
+### docs 项目文档
 
 ```text
 docs
-├── api.md
-├── requirement.md
-└── weekly-report.md
+├── api.md             # 后端接口文档
+├── requirement.md     # 需求文档
+└── weekly-report.md   # 开发周报
+```
 
-测试 F
+### sql 数据库脚本
 
-负责：
+统一存放数据库 SQL 脚本：
 
-API文档
-测试计划
-周报
-项目管理
-GitHub维护
+- `init.sql` 数据库初始化语句
+- `user.sql` 用户表脚本
+- `mail.sql` 邮件表脚本
 
-##SQL目录
+### test 测试目录
+
+存放单元测试、接口测试、功能测试相关文件。
+
+#### 测试 / 文档 F
+
+- 负责内容：文档编写、测试计划、API 整理、周报、GitHub 仓库维护
+
+---
+
+# Git 开发规范
+
+## 1. 每日开发前同步远程代码
+
+```bash
+git pull origin main
+```
+
+---
+
+## 2. 代码提交流程
+
+```bash
+git add .
+git commit -m "此处填写本次提交说明"
+git push origin main
+```
+
+---
+
+## 3. 禁止提交的文件
+
+已配置 `.gitignore` 自动忽略以下内容：
+
+- 前端依赖：`node_modules`
+- 后端编译目录：`target`
+- IDE 配置：`.idea`
+- 临时上传文件
+- Python 虚拟环境
+- 大模型本地文件等
+
+---
+
+# 项目启动方式
+
+## 1. 启动后端（Spring Boot）
+
+进入后端目录执行命令：
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+后端访问地址：
 
 ```text
-sql
-├── init.sql
-├── user.sql
-└── mail.sql
-
-数据库脚本统一放这里。
----
-Git 开发规范（重要）
-1. 拉取最新代码
-
-每天开发前先执行：
-
-git pull origin main
-2. 提交代码
-git add .
-git commit -m "提交说明"
-git push origin main
-3. 不要提交以下内容
-
-已经通过 .gitignore 自动忽略：
-
-node_modules
-target
-.idea
-upload 文件
-Python 虚拟环境
-大模型文件
-后端启动方式
-
-进入 backend 目录：
-
-cd backend
-
-启动 SpringBoot：
-
-mvn spring-boot:run
-
-默认端口：
-
 http://localhost:8080
-前端启动方式
+```
 
-进入 frontend 目录：
+---
 
+## 2. 启动前端（Vue3）
+
+进入前端目录，先安装依赖再启动：
+
+```bash
 cd frontend
-
-安装依赖：
-
 npm install
-
-启动项目：
-
 npm run dev
+```
 
-默认端口：
+前端访问地址：
 
+```text
 http://localhost:5173
+```
