@@ -170,3 +170,54 @@ sql
 └── mail.sql
 
 数据库脚本统一放这里。
+---
+Git 开发规范（重要）
+1. 拉取最新代码
+
+每天开发前先执行：
+
+git pull origin main
+2. 提交代码
+git add .
+git commit -m "提交说明"
+git push origin main
+3. 不要提交以下内容
+
+已经通过 .gitignore 自动忽略：
+
+node_modules
+target
+.idea
+upload 文件
+Python 虚拟环境
+大模型文件
+后端启动方式
+
+进入 backend 目录：
+
+cd backend
+
+启动 SpringBoot：
+
+mvn spring-boot:run
+
+默认端口：
+
+http://localhost:8080
+前端启动方式
+
+进入 frontend 目录：
+
+cd frontend
+
+安装依赖：
+
+npm install
+
+启动项目：
+
+npm run dev
+
+默认端口：
+
+http://localhost:5173
