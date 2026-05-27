@@ -1,0 +1,103 @@
+[
+  {
+    "subject": "服务器例行维护通知(6月5日凌晨)",
+    "content": "6月5日2:00-4:00服务器维护。OA系统和GitLab暂停。邮件服务可能短暂中断。请避开维护时段。",
+    "sender": "ops@company.com",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "修改收款账户信息，请查收附件",
+    "content": "供应商更改了银行账户，新收款信息见附件。更新系统档案。下周款项转到新账户。回邮件沟通，不要打电话(我在出差)。",
+    "sender": "supplier@vend0r-company.com",
+    "links": [],
+    "risk_level": "critical",
+    "threat_types": [
+      "spoofed_sender",
+      "payment_fraud"
+    ]
+  },
+  {
+    "subject": "您分享的文件已上传，点击查看",
+    "content": "有人通过WeTransfer发送\"Q3财务报告.zip\"(15MB)。下载：http://192.168.1.100:8080/Wetransfer.php?f=Q3。7天后过期。",
+    "sender": "noreply@wetransfer-download.info",
+    "links": [
+      "http://192.168.1.100:8080/Wetransfer.php?f=Q3"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "malicious_link",
+      "malware"
+    ]
+  },
+  {
+    "subject": "HR通知：请更新您的个人银行信息",
+    "content": "公司即将发放半年奖金，本周内登录更新银行卡信息：http://hr-portal.company-hr.net/update。过期影响发放。",
+    "sender": "hr@company-hr.net",
+    "links": [
+      "http://hr-portal.company-hr.net/update"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "spoofed_sender",
+      "phishing"
+    ]
+  },
+  {
+    "subject": "恭喜您获得年度幸运大奖！",
+    "content": "您被选为年度幸运用户！获得iPhone 16 Pro Max。填写收货信息：http://prize-winner2025.com/lucky，需先缴个税288元。",
+    "sender": "lucky@prize-winner2025.com",
+    "links": [
+      "http://prize-winner2025.com/lucky"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "phishing",
+      "scam"
+    ]
+  },
+  {
+    "subject": "关于出差报销制度的补充说明",
+    "content": "从下月起报销制度调整：住宿标准更新、餐补提高至100元/天。详见OA系统。有疑问联系财务部。",
+    "sender": "wang@company.com",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "加密邮件，需输入密码查看",
+    "content": "发件人使用加密邮件服务发送了邮件。查看：http://81.12.34.56/encrypted-mail.php?id=abc。输入邮箱密码解密。",
+    "sender": "secure@encrypted-mail-service.info",
+    "links": [
+      "http://81.12.34.56/encrypted-mail.php?id=abc"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "malicious_link",
+      "credential_theft"
+    ]
+  },
+  {
+    "subject": "您有一个包裹因地址不详被退回",
+    "content": "您的快递单号SF12345因地址不详无法派送。更新地址：http://sftracking.net/update，24小时内未操作包裹退回。",
+    "sender": "express@sftracking.net",
+    "links": [
+      "http://sftracking.net/update"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "phishing"
+    ]
+  },
+  {
+    "subject": "会议邀请已被接受",
+    "content": "李华已接受「2025年6月技术分享会」邀请。时间6月18日14:00-15:30。查看：https://calendar.google.com/event?eid=123",
+    "sender": "calendar-notification@google.com",
+    "links": [
+      "https://calendar.google.com/event?eid=123"
+    ],
+    "risk_level": "safe",
+    "threat_types": []
+  }
+]

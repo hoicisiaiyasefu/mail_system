@@ -22,7 +22,31 @@ spring:
         format_sql: true
         use_sql_comments: true
 
+# Python 智能插件配置
+plugin:
+  python-path: python3
+  plugins-dir: python_plugins
+  config-file: python_plugins/plugins_config.json   # 插件 JSON 配置文件路径
+
+# 大模型（LLM）配置 - 可选，不填则自动降级为纯规则模式
+llm:
+  enabled: false               # 是否启用大模型（需自行填写 api_key）
+  api-key: ""                  # OpenAI / 兼容 API 的密钥
+  provider: openai             # openai | custom
+  model: gpt-3.5-turbo
+  base-url: ""                 # 自定义 API 地址（vLLM/Ollama 等），留空用默认
+
+# 各插件专属配置（也可写在 plugins_config.json 中）
+plugins:
+  email_priority_plugin:
+    enabled: true
+  security_ai_plugin:
+    enabled: true
+  spam_ml_plugin:
+    enabled: true
+
 logging:
   level:
     root: INFO
     org.hibernate.SQL: DEBUG
+    com.example.backend.plugin: DEBUG

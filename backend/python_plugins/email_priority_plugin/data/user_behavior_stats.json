@@ -1,0 +1,74 @@
+{
+  "default": {
+    "boss@company.com": {
+      "total_received": 50,
+      "total_opened": 47,
+      "total_replied": 40,
+      "total_ignored": 0,
+      "total_deleted": 0,
+      "open_rate": 0.95,
+      "reply_rate": 0.8,
+      "interaction_count": 50,
+      "last_interaction": "2026-05-26T16:39:24.457174",
+      "last_interaction_days": 1,
+      "first_interaction": "2026-02-25T16:39:24.457174",
+      "avg_response_time_minutes": 0
+    },
+    "colleague@company.com": {
+      "total_received": 30,
+      "total_opened": 25,
+      "total_replied": 18,
+      "total_ignored": 0,
+      "total_deleted": 0,
+      "open_rate": 0.85,
+      "reply_rate": 0.6,
+      "interaction_count": 30,
+      "last_interaction": "2026-05-26T16:39:24.457174",
+      "last_interaction_days": 1,
+      "first_interaction": "2026-02-25T16:39:24.457174",
+      "avg_response_time_minutes": 0
+    },
+    "hr@company.com": {
+      "total_received": 15,
+      "total_opened": 13,
+      "total_replied": 6,
+      "total_ignored": 0,
+      "total_deleted": 0,
+      "open_rate": 0.9,
+      "reply_rate": 0.4,
+      "interaction_count": 15,
+      "last_interaction": "2026-05-26T16:39:24.457174",
+      "last_interaction_days": 1,
+      "first_interaction": "2026-02-25T16:39:24.457174",
+      "avg_response_time_minutes": 0
+    },
+    "newsletter@external.com": {
+      "total_received": 100,
+      "total_opened": 20,
+      "total_replied": 1,
+      "total_ignored": 0,
+      "total_deleted": 0,
+      "open_rate": 0.2,
+      "reply_rate": 0.01,
+      "interaction_count": 100,
+      "last_interaction": "2026-05-26T16:39:24.457174",
+      "last_interaction_days": 0,
+      "first_interaction": "2026-02-25T16:39:24.457174",
+      "avg_response_time_minutes": 0
+    },
+    "noreply@service.com": {
+      "total_received": 200,
+      "total_opened": 100,
+      "total_replied": 0,
+      "total_ignored": 0,
+      "total_deleted": 0,
+      "open_rate": 0.5,
+      "reply_rate": 0.0,
+      "interaction_count": 200,
+      "last_interaction": "2026-05-26T16:39:24.457174",
+      "last_interaction_days": 1,
+      "first_interaction": "2026-02-25T16:39:24.457174",
+      "avg_response_time_minutes": 0
+    }
+  }
+}

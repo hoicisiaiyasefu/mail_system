@@ -1,0 +1,235 @@
+[
+  {
+    "subject": "您的账号存在异常登录，请立即验证",
+    "content": "系统检测到您的账号在异地登录。请立即点击链接验证：http://mail-verify.goog1e-verify.com/check。24小时未验证将冻结账号。",
+    "sender": "security@g00gle.com",
+    "links": [
+      "http://mail-verify.goog1e-verify.com/check"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "phishing",
+      "spoofed_sender",
+      "urgency_trap"
+    ]
+  },
+  {
+    "subject": "代码审查请求：支付模块性能优化",
+    "content": "完成支付模块性能优化，代码提交feature/payment-optimize。Issue#3456。请审查：https://github.com/company/repo/pull/2678",
+    "sender": "li@company.com",
+    "links": [
+      "https://github.com/company/repo/pull/2678"
+    ],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "查看这份机密文件",
+    "content": "请务必保密。链接中是内部文件：https://tinyurl.com/abc1234xyz。密码是你的工号。不要转发。阅后即焚。",
+    "sender": "anonymous@proton.me",
+    "links": [
+      "https://tinyurl.com/abc1234xyz"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "malicious_link",
+      "short_url"
+    ]
+  },
+  {
+    "subject": "会议纪要-20250615.vbs",
+    "content": "技术评审会会议纪要已整理完毕。确认Action Items见文档末尾。附件：会议纪要-20250615.vbs",
+    "sender": "note-taker@company-mail.org",
+    "links": [],
+    "risk_level": "high",
+    "threat_types": [
+      "malicious_attachment"
+    ]
+  },
+  {
+    "subject": "端午节放假安排通知",
+    "content": "端午节放假6月10日-12日共3天。假期注意安全。公司将发放节日礼品，请到前台领取。",
+    "sender": "hr@company.com",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "支付宝余额异常，请立即核实",
+    "content": "检测到5000元转账。如非本人操作请登录核实：https://alipay-secure.net/verify。客服0571-88888888。",
+    "sender": "service@alipay-secure.net",
+    "links": [
+      "https://alipay-secure.net/verify"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "phishing",
+      "spoofed_sender"
+    ]
+  },
+  {
+    "subject": "请立即审批这笔付款申请",
+    "content": "小王，马上审批附件付款申请。供应商催得很急，今天必须付出去。金额50万，项目号PRJ-2025-088。尽快！",
+    "sender": "ceo@companny.com",
+    "links": [],
+    "risk_level": "critical",
+    "threat_types": [
+      "spoofed_sender",
+      "ceo_fraud"
+    ]
+  },
+  {
+    "subject": "法院传票通知：法律文书待签收",
+    "content": "案件(2025)京0105民初12345号，涉及民事纠纷。下载详情：http://legal-notice2025.cc/doc。逾期承担法律后果。",
+    "sender": "court@legal-notice2025.cc",
+    "links": [
+      "http://legal-notice2025.cc/doc"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "phishing",
+      "social_engineering"
+    ]
+  },
+  {
+    "subject": "发票详情-2025年6月.exe",
+    "content": "本月电子发票已生成，详情查看附件。有疑问联系财务部。附件：发票详情-2025年6月.exe",
+    "sender": "billing@invoicelookup.cn",
+    "links": [],
+    "risk_level": "critical",
+    "threat_types": [
+      "malicious_attachment",
+      "trojan"
+    ]
+  },
+  {
+    "subject": "关于本周五项目进度会议的安排",
+    "content": "定于本周五下午2点三楼会议室召开本月项目进度总结会议。请准备各自模块进度报告。准时参加。",
+    "sender": "zhang@company.com",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "会议改期通知，请查看新链接",
+    "content": "明天上午会议地点变动，新链接：https://bit.ly/meeting-room-change。时间不变，请准时。",
+    "sender": "assistant@company.com",
+    "links": [
+      "https://bit.ly/meeting-room-change"
+    ],
+    "risk_level": "medium",
+    "threat_types": [
+      "malicious_link",
+      "short_url"
+    ]
+  },
+  {
+    "subject": "关于毕业离校手续的通知",
+    "content": "应届毕业生离校手续6月20-30日办理。行政楼一楼综合服务大厅。材料：学生证、借阅清单、宿舍退还单。",
+    "sender": "student@school.edu.cn",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "图书馆还书提醒",
+    "content": "《深入理解计算机系统》6月15日到期。续借：https://lib.school.edu.cn/renew。逾期按每天0.2元计费。",
+    "sender": "lib@school.edu.cn",
+    "links": [
+      "https://lib.school.edu.cn/renew"
+    ],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "Apple ID即将过期，请续期验证",
+    "content": "Apple ID将在24小时后过期。不续期将无法使用iCloud等服务。验证：http://apple-id-verify.com/login",
+    "sender": "noreply@app1e-id.com",
+    "links": [
+      "http://apple-id-verify.com/login"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "phishing",
+      "spoofed_sender"
+    ]
+  },
+  {
+    "subject": "Q3季度工作目标确认",
+    "content": "请下周三前提交各团队Q3工作目标与详细计划。包含KPI、里程碑、资源预算、风险预案。直接影响考核。",
+    "sender": "chen@company.com",
+    "links": [],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "GitHub: Pull Request #2345 已合并",
+    "content": "您的PR(feature/auth-refactor)已合并到main分支。Squash and merge。查看：https://github.com/company/repo/pull/2345",
+    "sender": "notifications@github.com",
+    "links": [
+      "https://github.com/company/repo/pull/2345"
+    ],
+    "risk_level": "safe",
+    "threat_types": []
+  },
+  {
+    "subject": "发票下载链接",
+    "content": "电子发票已开具。下载：http://fapiao-download.xyz/2025/06/INV-12345.pdf。24小时内有效。",
+    "sender": "invoice@fapiao-download.xyz",
+    "links": [
+      "http://fapiao-download.xyz/2025/06/INV-12345.pdf"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "malicious_link",
+      "phishing"
+    ]
+  },
+  {
+    "subject": "您的银行卡存在异常交易，请立即核实",
+    "content": "检测到银行卡异常交易。请登录网银核实：https://icbc-secure.cc/online。如非本人操作请修改密码。",
+    "sender": "service@icbc-secure.cc",
+    "links": [
+      "https://icbc-secure.cc/online"
+    ],
+    "risk_level": "critical",
+    "threat_types": [
+      "phishing",
+      "spoofed_sender"
+    ]
+  },
+  {
+    "subject": "紧急安全补丁安装程序",
+    "content": "IT部门要求立即安装安全补丁，修复零日漏洞。双击运行。附件：Security-Patch-Critical.js",
+    "sender": "it-admin@security-update.org",
+    "links": [],
+    "risk_level": "critical",
+    "threat_types": [
+      "malicious_attachment",
+      "spoofed_sender"
+    ]
+  },
+  {
+    "subject": "合同终稿.docx .bat",
+    "content": "请查收最终合同版本，注意红字修改。附件：合同终稿.docx .bat",
+    "sender": "client@business-partner.net",
+    "links": [],
+    "risk_level": "high",
+    "threat_types": [
+      "malicious_attachment"
+    ]
+  },
+  {
+    "subject": "技术支持：您的密码即将过期",
+    "content": "公司邮箱密码48小时后过期。访问重置密码：http://it-support.company-portal.com/reset。用户名和旧密码登录。",
+    "sender": "it-support@company-portal.com",
+    "links": [
+      "http://it-support.company-portal.com/reset"
+    ],
+    "risk_level": "high",
+    "threat_types": [
+      "spoofed_sender",
+      "credential_theft"
+    ]
+  }
+]

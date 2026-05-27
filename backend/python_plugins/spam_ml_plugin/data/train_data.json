@@ -1,0 +1,520 @@
+[
+  {
+    "content": "绝对内部消息明天涨停股票推荐，跟买稳赚不赔年收益300%加群获取",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "专业代写论文包过包发表，硕博论文期刊论文SCI/EI收录保证质量",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "客户满意度调查填写邀请您的反馈对我们非常重要2分钟填写给50元优惠券",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "出售各大银行储蓄卡信用卡额度3-50万包下卡无前期费用",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "快速办理各类证件，毕业证学位证资格证全国通用网上可查三天出证包邮",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "手机挖矿项目注册送矿机每天自动挖矿产出可交易提现秒到",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "日结工资在家工作手机操作简单易学每天300元当日结算扫码报名",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "服务器例行维护通知6月5日凌晨2点至4点OA系统暂停邮件可能短暂中断",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "项目复盘会议总结用户增长幅度达预期核心指标均达标后续优化计划已整理",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "运营周报本周访问量增长15新增用户注册2万订单转化率提升至3.2个百分点",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "专业代开发票，增值税普通发票专用发票均可办理正规渠道可查当天出票",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "团队建设活动方案征集7月中下旬两天一夜人均预算2000元欢迎提交创意",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于公司年假制度的更新通知全年年假调整为15天可按小时请假请知悉",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "技术债务清理计划公示第二季度重点解决遗留的SQL优化和异常处理规范化",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "办理大额信用卡秒批秒用无需面签额度1到50万全国接单",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "机器学习模型部署规范更新新增模型AB测试框架支持灰度发布和自动回滚",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于知识产权保护培训通知下周三下午线上参加培训计入年底考核学分",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "出售公民个人信息数据，业主车主股民银行客户精准数据按条收费",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "代码审查请求用户认证模块重构改为JWT Token认证增加刷新令牌机制修复SQL注入",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "整形美容医院优惠大酬宾双眼皮隆鼻瘦脸针玻尿酸特价体验",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "公司股价回购计划公告董事会批准回购1亿股份用于员工股权激励计划",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "短信群发平台106通道三网合一到达率99%价格低至3分每条",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "刷单平台招会员入职缴纳会费198元每天固定任务佣金日结",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "请伸出援手帮助山区贫困儿童，爱心募捐10元让一个孩子吃上热饭",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "法*院*传*票*通*知，涉及民事纠纷案件，下载查看详情逾期承担法律后果",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "招打字员1000字30元手机电脑均可无押金无会费当天结算加QQ群",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "全网最全考研资料分享，政治英语数学专业课真题笔记限时免费下载",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "设备巡检报告数据中心所有服务器运行正常温度湿度在标准范围内",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "本周工作总结及下周计划完成用户管理模块开发修复三个Bug下周开始订单模块设计",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "测试环境数据脱敏规范实施通知生产数据禁止用于测试请使用脱敏后数据",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "新用户注册送500元优惠券，全场通用有效期30天先到先得注册链接",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "最新破解软件合集免费高速下载，Adobe全家桶Office激活版CAD永久版",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "公司VPN客户端升级通知支持WireGuard协议修复MacOS兼容性旧版7月1日停用",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于云服务器迁移的通知迁移时间周末完成预计影响4小时服务不受影响",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于代码规范更新的通知PEP8新增规则补充git提交信息格式规范化",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "出售手机监听设备微信聊天记录查看器GPS定位追踪器货到付款",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "开发环境标准化推进通知统一使用Docker开发环境IDE配置模板已更新",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于选修课选课建议人工智能导论王教授讲解清晰作业适中强烈推荐",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "抖音快手点赞员日赚80元简单操作无需经验扫码进群",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "股市黑马推荐群，老师带队每天推荐涨停牛股免费体验三天",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "关于专利申请流程的说明内部创新提交需填写技术交底书经部门审核后提交",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "您的花呗额度已提升至50000元，点击链接立即激活无需审核",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "祖传秘方专治疑难杂症高血压糖尿病关节炎，纯中药配方无副作用一疗程见效",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "限时抢购！全场商品低至1折，品牌服装数码产品应有尽有！点击链接抢购",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "项目延期风险提示由于供应商交付延迟项目里程碑可能顺延一周已制定应对方案",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "实验数据共享邮件分类数据集标注完成训练集5000验证集1000Kappa系数0.87",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "银行卡异常交易请核实，登录网银核实如非本人操作修改密码保障资金安全",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "供应商评估结果公示共有三家供应商通过年度评审详细评分见附件",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "期货原油外汇黄金代理招商高返佣日结支持三级分销系统",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "出差报销制度补充说明住宿标准调整餐补提高至100元交通费需电子发票",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "2025最新版炒股神器自动选股买卖点提示胜率95%以上免费试用",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "订单处理系统升级公告新增退货自动处理功能减少人工干预提高客户满意度",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "恭喜中奖！获得超级大礼包iPhone现金红包笔记本电脑，先缴个税后发货",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "校友返校日活动邀请函7月6日周六举行座谈会论坛午餐交流校园参观",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于工作流程自动化的建议征集欢迎提交可自动化操作的建议评选最佳方案",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "期末考试安排计算机网络6月15日上午操作系统6月18日下午请携带学生证",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "快速提升学历正规学历学信网可查专升本高起专无需上课最快三个月拿证",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "研发部门招聘面试安排通知下周一至周三上午9点至12点请面试官确认时间",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "新版本发布通知v3.2.1修复登录超时问题优化列表加载性能新增Excel导出",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "恭喜被选为幸运商家百度搜索关键词排名首页展示点击不收费",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "无需抵押当天放款最高可贷50万，纯信用贷款利率低月息1%分期还款无压力",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "关于办理毕业离校手续的注意事项6月20至30日行政楼一楼携带学生证等材料",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "同城交友真人认证海量会员24小时在线视频聊天语音通话新用户免费VIP",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "关于本周五项目进度会议的安排请各位提前准备各自模块的进度报告准时参加",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于机房空调系统维护的通知周六凌晨2点至5点不影响设备运行已做好预案",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "零风险高收益年化收益率30%平台担保，最低投资1000元随存随取灵活方便",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "复制这条消息打开淘宝领取隐藏优惠券，内部员工通道限量发放先到先得",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "公司园区绿化改造工程公告下月开始工期两个月请配合临时交通管制",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "暑假借书延期归还6月1日后借阅图书应还日期统一延长至9月15日",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "成人专区海量资源高清无码秒播不卡，VIP会员限时半价扫码支付立即观看",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "安全生产月活动通知组织消防安全培训应急演练和安全知识竞赛全员参与",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "快递包裹地址不详无法派送，点击更新地址否则包裹退回，快递单号SF123",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "本月工资发放时间调整由于银行系统升级延迟至6月8日给大家带来不便敬请谅解",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "您的邮箱账号存在安全风险请立即验证，异地登录需身份验证否则冻结",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  }
+]
