@@ -1,4 +1,4 @@
-package com.example.backend.plugin;
+package com.example.backend.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

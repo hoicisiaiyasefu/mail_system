@@ -47,7 +47,7 @@ Spring Controller → *Service.java → PythonBridge.java → bridge_*.py → Pl
 
 ### PythonBridge.java
 
-**位置**: `com.example.backend.plugin.PythonBridge`
+**位置**: `com.example.backend.ai.PythonBridge`
 **注解**: `@Component`
 
 底层桥接器，负责通过 `ProcessBuilder` 启动 Python 子进程，传递 JSON 数据，读取 stdout 结果。
@@ -98,7 +98,7 @@ private boolean spamEnabled;
 
 ### SpamDetectorService.java
 
-**位置**: `com.example.backend.plugin.SpamDetectorService`
+**位置**: `com.example.backend.ai.SpamDetectorService`
 **注解**: `@Service`
 
 垃圾邮件检测服务，封装对 `bridge_spam.py` 的调用。
@@ -154,7 +154,7 @@ public void checkEmail(Email email) {
 
 ### SecurityEngineService.java
 
-**位置**: `com.example.backend.plugin.SecurityEngineService`
+**位置**: `com.example.backend.ai.SecurityEngineService`
 **注解**: `@Service`
 
 AI 安全检测服务，封装对 `bridge_security.py` 的调用。
@@ -221,7 +221,7 @@ public void analyzeEmail(Email email) {
 
 ### PriorityEngineService.java
 
-**位置**: `com.example.backend.plugin.PriorityEngineService`
+**位置**: `com.example.backend.ai.PriorityEngineService`
 **注解**: `@Service`
 
 邮件优先级排序服务，封装对 `bridge_priority.py` 的调用。
@@ -373,7 +373,7 @@ plugins:
 # ==========================================
 logging:
   level:
-    com.example.backend.plugin: DEBUG   # 输出 PythonBridge 详细日志
+    com.example.backend.ai: DEBUG   # 输出 PythonBridge 详细日志
 ```
 
 ---
