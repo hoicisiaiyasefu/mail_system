@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-安全检测桥接脚本
+邮件安全分析桥接脚本
 通过命令行参数接收 JSON 邮件数据，调用 SecurityEngine 处理
 
 用法:
-  python bridge_security.py '<json_email_data>'                          # 无 LLM
-  python bridge_security.py '<json_email_data>' '<json_config>'           # 有配置
+  python bridge_security.py '<json_email_data>'                               # 无配置
+  python bridge_security.py '<json_email_data>' '<json_config>'               # 有配置
 """
 
 import sys
 import json
 import os
+
+# ============================================================
+# 彻底抑制 stderr：Java 端 redirectErrorStream(true) 会将
+# stderr 合并到 stdout，任何 stderr 输出都会污染 JSON 结果。
+# 必须在所有 import 之前执行，防止三方库注册了 handler。
+# ============================================================
+_devnull_fd = os.open(os.devnull, os.O_WRONLY)
+_original_stderr_fd = os.dup(2)
+os.dup2(_devnull_fd, 2)
+os.close(_devnull_fd)
 
 # 确保能找到同级模块
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

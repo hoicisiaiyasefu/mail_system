@@ -231,20 +231,27 @@ class DLLInferenceEngine:
         """尝试加载 DLL"""
         try:
             if os.path.exists(self.dll_path):
-                self.dll = ctypes.CDLL(self.dll_path)
+                # 抑制 ctypes.CDLL 在失败时向 stderr 打印的错误信息
+                # 使用 os.dup2 底层重定向（比 sys.stderr 重定向更彻底）
+                old_fd = os.dup(2)
+                null_fd = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(null_fd, 2)
+                try:
+                    self.dll = ctypes.CDLL(self.dll_path)
+                finally:
+                    os.dup2(old_fd, 2)
+                    os.close(null_fd)
+                    os.close(old_fd)
                 # 设置函数签名
                 self.dll.predict_spam.argtypes = [ctypes.c_char_p]
                 self.dll.predict_spam.restype = ctypes.c_double
                 self.dll.init_model.argtypes = [ctypes.c_char_p]
                 self.dll.init_model.restype = ctypes.c_bool
                 self.dll_loaded = True
-                logger.info(f"DLL 加载成功: {self.dll_path}")
                 return True
             else:
-                logger.warning(f"DLL 文件未找到: {self.dll_path}，使用 Python 回退方案")
                 return False
-        except Exception as e:
-            logger.warning(f"DLL 加载失败: {e}，使用 Python 回退方案")
+        except Exception:
             return False
 
     def init_model(self, model_path: str) -> bool:
@@ -623,13 +630,12 @@ class MLSpamDetector(EmailPluginBase):
         """关闭插件"""
         if self.dll_engine and self.dll_engine.dll_loaded:
             try:
-                if self.dll_engine.dll:
-                    # 释放 DLL
+                if self.dll_engine.dll and hasattr(ctypes, 'windll'):
+                    # 释放 DLL（仅 Windows）
                     ctypes.windll.kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
                     # DLL 会在进程退出时自动释放
             except Exception:
                 pass
-        logger.info("ML 垃圾邮件检测器已关闭")
 
 
 # ============================================================

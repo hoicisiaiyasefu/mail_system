@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.annotation.PostConstruct;
+
 /**
  * Python 桥接器 - 通过进程调用 Python 脚本执行插件逻辑
  * 从 application.yml 读取 plugin.*、llm.*、plugins.* 配置，
@@ -27,6 +29,21 @@ public class PythonBridge {
 
     @Value("${plugin.python-path:python3}")
     private String pythonPath;
+
+    /**
+     * 根据操作系统自动选择 Python 命令。
+     * 仅在未显式覆盖默认值 "python3" 时才调整。
+     */
+    @PostConstruct
+    private void autoDetectPythonPath() {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+        if ("python3".equals(pythonPath) && isWindows) {
+            pythonPath = "python";
+            log.info("检测到 Windows 系统，python-path 自动切换为: {}", pythonPath);
+        } else {
+            log.debug("python-path: {} (os: {})", pythonPath, System.getProperty("os.name"));
+        }
+    }
 
     @Value("${plugin.plugins-dir:python_plugins}")
     private String pluginsDir;

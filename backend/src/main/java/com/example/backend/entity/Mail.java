@@ -93,6 +93,9 @@ public class Mail {
     @Column(name = "spam_score", precision = 5, scale = 4)
     private BigDecimal spamScore;
 
+    @Column(name = "is_spam", nullable = false)
+    private Boolean isSpam = false;
+
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
