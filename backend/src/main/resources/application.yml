@@ -30,11 +30,11 @@ plugin:
 
 # 大模型（LLM）配置 - 可选，不填则自动降级为纯规则模式
 llm:
-  enabled: false               # 是否启用大模型（需自行填写 api_key）
-  api-key: ""                  # OpenAI / 兼容 API 的密钥
+  enabled: true               # 是否启用大模型（需自行填写 api_key）
+  api-key: "sk-9YJuAZV8YA4ZjfKKqnggtNRxUTvT6bXEQrYWKT188TyVnTN8"                  # OpenAI / 兼容 API 的密钥
   provider: openai             # openai | custom
-  model: gpt-3.5-turbo
-  base-url: ""                 # 自定义 API 地址（vLLM/Ollama 等），留空用默认
+  model: deepseek-v4-pro
+  base-url: "https://www.micuapi.ai/v1"                 # 自定义 API 地址（vLLM/Ollama 等），留空用默认
 
 # 各插件专属配置（也可写在 plugins_config.json 中）
 plugins:
