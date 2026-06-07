@@ -92,6 +92,72 @@ public class MailService {
                 owner, Mail.MailFolder.SPAM);
     }
 
+    /**
+     * 发送邮件 — 创建发送副本（SENT）和接收副本（INBOX）
+     *
+     * @param senderUserId 发件人用户 ID（从 JWT Token 中提取）
+     * @param toAddresses  收件人地址（多个用逗号分隔）
+     * @param subject      主题
+     * @param content      正文
+     * @param ccAddresses  抄送地址（可选）
+     * @return 结果 Map（含发送邮件信息）
+     */
+    @Transactional
+    public Map<String, Object> sendMail(Long senderUserId, String toAddresses,
+                                        String subject, String content,
+                                        String ccAddresses) {
+        // 查找发件人
+        MailUser sender = mailUserRepository.findById(senderUserId)
+                .orElseThrow(() -> new RuntimeException("发件用户不存在: id=" + senderUserId));
+
+        // 1. 创建"已发送"副本（发件人视角）
+        Mail sentMail = new Mail();
+        sentMail.setOwner(sender);
+        sentMail.setSender(sender);
+        sentMail.setFromAddress(sender.getEmailAddress());
+        sentMail.setToAddresses(toAddresses);
+        sentMail.setCcAddresses(ccAddresses);
+        sentMail.setSubject(subject != null ? subject : "");
+        sentMail.setContent(content != null ? content : "");
+        sentMail.setContentType("text/plain");
+        sentMail.setStatus(Mail.MailStatus.SENT);
+        sentMail.setFolder(Mail.MailFolder.SENT);
+        sentMail.setSentAt(LocalDateTime.now());
+        sentMail.setReceivedAt(LocalDateTime.now());
+        sentMail.setIsSpam(false);
+        sentMail.setSpamScore(BigDecimal.ZERO);
+        Mail savedSent = mailRepository.save(sentMail);
+        log.info("已发送邮件副本已保存: id={}, from={}, subject={}",
+                savedSent.getId(), sender.getEmailAddress(), subject);
+
+        // 2. 为每个收件人创建"收件箱"副本（接收方视角），并触发垃圾邮件检测
+        String[] recipients = toAddresses.split(",");
+        for (String recipientEmail : recipients) {
+            String trimmed = recipientEmail.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            // 复用 receiveMail 逻辑（含异步垃圾邮件检测）
+            Mail received = receiveMail(
+                    sender.getEmailAddress(),
+                    trimmed,
+                    subject,
+                    content,
+                    "text/plain"
+            );
+            log.info("收件人 {} 的收件箱副本已创建: mailId={}", trimmed, received.getId());
+        }
+
+        return Map.of(
+                "id", savedSent.getId(),
+                "from", sender.getEmailAddress(),
+                "to", toAddresses,
+                "subject", subject,
+                "status", "SENT",
+                "message", "邮件已发送"
+        );
+    }
+
     // ============================================================
     // 私有辅助方法
     // ============================================================
