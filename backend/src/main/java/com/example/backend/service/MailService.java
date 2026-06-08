@@ -84,6 +84,17 @@ public class MailService {
         return mailRepository.findById(id).orElse(null);
     }
 
+    public Mail saveMail(Mail mail) {
+        return mailRepository.save(mail);
+    }
+
+    public List<Mail> listInboxByUserId(Long userId) {
+        MailUser owner = mailUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在: id=" + userId));
+        return mailRepository.findByOwnerAndFolderAndDeletedFlagFalseOrderByReceivedAtDescCreatedAtDesc(
+                owner, Mail.MailFolder.INBOX);
+    }
+
     /**
      * 查询用户的垃圾邮件列表
      */

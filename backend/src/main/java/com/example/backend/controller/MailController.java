@@ -2,11 +2,13 @@ package com.example.backend.controller;
 
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.MailUser;
+import com.example.backend.service.FileStorageService;
 import com.example.backend.service.MailService;
 import com.example.backend.service.SpamAsyncService;
 import com.example.backend.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -20,10 +22,14 @@ public class MailController {
 
     private final MailService mailService;
     private final SpamAsyncService spamAsyncService;
+    private final FileStorageService fileStorageService;
 
-    public MailController(MailService mailService, SpamAsyncService spamAsyncService) {
+    public MailController(MailService mailService,
+                          SpamAsyncService spamAsyncService,
+                          FileStorageService fileStorageService) {
         this.mailService = mailService;
         this.spamAsyncService = spamAsyncService;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -231,4 +237,71 @@ public class MailController {
         }
         return null;
     }
+
+    @PostMapping("/receive-with-attachment")
+    public ResponseEntity<Map<String, Object>> receiveWithAttachment(
+            @RequestParam("from") String from,
+            @RequestParam("to") String to,
+            @RequestParam("subject") String subject,
+            @RequestParam("content") String content,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+
+        if (from == null || from.isBlank() || to == null || to.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "发件人和收件人不能为空"
+            ));
+        }
+
+        String filePath = fileStorageService.saveFile(file);
+
+        Mail mail = mailService.receiveMail(
+                from, to, subject, content, "text/plain"
+        );
+
+        if (filePath != null) {
+            mail.setAttachmentPath(filePath);
+            mail.setHasAttachments(true);
+            mailService.saveMail(mail);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "msg", "ok",
+                "mailId", mail.getId(),
+                "filePath", filePath
+        ));
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> listInbox(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        try {
+            var mails = mailService.listInboxByUserId(userId);
+            var data = mails.stream().map(mail -> Map.<String, Object>of(
+                    "id", mail.getId(),
+                    "from", mail.getFromAddress(),
+                    "to", mail.getToAddresses(),
+                    "subject", mail.getSubject(),
+                    "receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null,
+                    "isSpam", mail.getIsSpam(),
+                    "hasAttachments", mail.getHasAttachments(),
+                    "attachmentPath", mail.getAttachmentPath(),
+                    "folder", mail.getFolder().name(),
+                    "status", mail.getStatus().name()
+            )).toList();
+            return ResponseEntity.ok(Map.of("mails", data));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "查询收件列表失败: " + e.getMessage()
+            ));
+        }
+    }
 }
+
