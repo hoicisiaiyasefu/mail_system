@@ -7,12 +7,20 @@ const router = createRouter({
       path: '/',
       redirect: '/login',
     },
+    // ========== 空白布局（无侧边栏）==========
     {
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
       meta: { layout: 'blank' },
     },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/RegisterView.vue'),
+      meta: { layout: 'blank' },
+    },
+    // ========== 邮件布局（侧边栏 + 顶栏）==========
     {
       path: '/inbox',
       name: 'inbox',
@@ -24,6 +32,30 @@ const router = createRouter({
       name: 'compose',
       component: () => import('@/views/ComposeView.vue'),
       meta: { layout: 'mail', title: '写信' },
+    },
+    {
+      path: '/mail/:id',
+      name: 'mailDetail',
+      component: () => import('@/views/MailDetailView.vue'),
+      meta: { layout: 'mail', title: '邮件详情' },
+    },
+    {
+      path: '/sent',
+      name: 'sent',
+      component: () => import('@/views/SentView.vue'),
+      meta: { layout: 'mail', title: '已发送' },
+    },
+    {
+      path: '/spam',
+      name: 'spam',
+      component: () => import('@/views/SpamView.vue'),
+      meta: { layout: 'mail', title: '垃圾邮件' },
+    },
+    {
+      path: '/drafts',
+      name: 'drafts',
+      component: () => import('@/views/DraftsView.vue'),
+      meta: { layout: 'mail', title: '草稿箱' },
     },
   ],
 })

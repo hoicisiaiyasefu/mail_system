@@ -7,6 +7,7 @@ import {
   Message,
   Promotion,
   WarningFilled,
+  DocumentCopy,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -15,8 +16,13 @@ const router = useRouter()
 const showMailLayout = computed(() => route.meta.layout === 'mail')
 
 const activeMenu = computed(() => {
-  if (route.path.startsWith('/inbox')) return '/inbox'
-  if (route.path.startsWith('/compose')) return '/compose'
+  const path = route.path
+  if (path.startsWith('/compose')) return '/compose'
+  if (path.startsWith('/inbox')) return '/inbox'
+  if (path.startsWith('/sent')) return '/sent'
+  if (path.startsWith('/drafts')) return '/drafts'
+  if (path.startsWith('/spam')) return '/spam'
+  if (path.startsWith('/mail/')) return '/inbox'  // 邮件详情页高亮收件箱
   return '/inbox'
 })
 
@@ -55,6 +61,10 @@ function handleLogout() {
         <el-menu-item index="/sent">
           <el-icon><Promotion /></el-icon>
           <span>已发送</span>
+        </el-menu-item>
+        <el-menu-item index="/drafts">
+          <el-icon><DocumentCopy /></el-icon>
+          <span>草稿箱</span>
         </el-menu-item>
         <el-menu-item index="/spam">
           <el-icon><WarningFilled /></el-icon>
