@@ -107,6 +107,11 @@ public class Mail {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+	
+	// ======= B模块新增（附件路径）=======
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
+
 
     @PrePersist
     void prePersist() {
