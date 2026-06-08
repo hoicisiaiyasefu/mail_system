@@ -154,16 +154,16 @@ public class MailController {
      * POST /api/mail/send
      *
      * <p>请求头：Authorization: Bearer &lt;token&gt;</p>
+     * <p>Content-Type: multipart/form-data</p>
      *
-     * <p>请求体 JSON：</p>
-     * <pre>{@code
-     * {
-     *   "to": "lisi@example.com",
-     *   "subject": "会议通知",
-     *   "content": "周五下午开会...",
-     *   "cc": "wangwu@example.com"
-     * }
-     * }</pre>
+     * <p>请求参数：</p>
+     * <pre>
+     *   - to: string
+     *   - subject: string
+     *   - content: string
+     *   - cc: string (optional)
+     *   - file: MultipartFile (optional)
+     * </pre>
      *
      * <p>成功响应：</p>
      * <pre>{@code
@@ -180,7 +180,11 @@ public class MailController {
     @PostMapping("/send")
     public ResponseEntity<Map<String, Object>> sendMail(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody Map<String, Object> body) {
+            @RequestParam("to") String to,
+            @RequestParam("subject") String subject,
+            @RequestParam("content") String content,
+            @RequestParam(value = "cc", required = false) String cc,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
 
         // 1. 校验 Token
         String token = extractBearerToken(authHeader);
@@ -192,12 +196,7 @@ public class MailController {
 
         Long senderUserId = JwtUtil.getUserIdFromToken(token);
 
-        // 2. 解析请求参数
-        String to      = (String) body.get("to");
-        String subject = (String) body.get("subject");
-        String content = (String) body.get("content");
-        String cc      = (String) body.get("cc");   // 可选
-
+        // 2. 校验参数
         if (to == null || to.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "收件人不能为空"
@@ -209,12 +208,19 @@ public class MailController {
             ));
         }
 
-        // 3. 调用业务层发送
+        // 3. 保存文件（如果有）
+        String filePath = null;
+        if (file != null && !file.isEmpty()) {
+            filePath = fileStorageService.saveFile(file);
+        }
+
+        // 4. 调用业务层发送
         try {
-            Map<String, Object> result = mailService.sendMail(
+            Map<String, Object> result = mailService.sendMailWithAttachment(
                     senderUserId, to, subject,
                     content != null ? content : "",
-                    cc != null ? cc : ""
+                    cc != null ? cc : "",
+                    filePath
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {

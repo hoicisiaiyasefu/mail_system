@@ -1,75 +1,55 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { mailService } from '@/api/mailService'
 
 const router = useRouter()
 
-// 模拟收件箱数据
-const mailList = ref([
-  {
-    id: 1,
-    from: 'zhangsan@example.com',
-    subject: '关于项目进展的汇报',
-    preview: '您好，附件是本周的项目进展汇报，请查收。主要内容包括：1. 前端页面开发进度...',
-    date: '2026-05-31 14:30',
-    isRead: false,
-    hasAttachment: true,
-  },
-  {
-    id: 2,
-    from: 'lisi@company.com',
-    subject: '会议邀请：需求评审',
-    preview: '各位同事，定于本周五下午3点在会议室A进行需求评审会议，请大家提前准备...',
-    date: '2026-05-31 10:15',
-    isRead: false,
-    hasAttachment: false,
-  },
-  {
-    id: 3,
-    from: 'wangwu@school.edu',
-    subject: '实训周报提交提醒',
-    preview: '同学们请注意，第一周的实训周报需要在周五前提交，格式请参考模板...',
-    date: '2026-05-30 16:45',
-    isRead: true,
-    hasAttachment: true,
-  },
-  {
-    id: 4,
-    from: 'admin@mail-system.com',
-    subject: '欢迎使用邮件系统',
-    preview: '欢迎注册使用本邮件系统！以下是系统的使用指南，帮助您快速上手...',
-    date: '2026-05-29 09:00',
-    isRead: true,
-    hasAttachment: false,
-  },
-  {
-    id: 5,
-    from: 'noreply@github.com',
-    subject: '[mail-system] New pull request #12',
-    preview: 'feat: 添加前端登录页面和收件箱页面 — 新增了 Vue3 前端登录页面...',
-    date: '2026-05-28 22:10',
-    isRead: true,
-    hasAttachment: false,
-  },
-])
-
+const mailList = ref([]) // 从后端获取的邮件列表
 const selectedMails = ref([])
 const searchKeyword = ref('')
+const loading = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
+const total = ref(0)
+
+/**
+ * 页面加载时拉取邮件列表
+ */
+onMounted(() => {
+  fetchMailList()
+})
+
+/**
+ * 从后端获取邮件列表
+ */
+async function fetchMailList() {
+  loading.value = true
+  try {
+    const res = await mailService.getMailList(currentPage.value, pageSize.value)
+    mailList.value = res.mails || []
+    total.value = res.total || 0
+  } catch (error) {
+    ElMessage.error('获取邮件列表失败')
+    console.error('Fetch mails error:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 function handleSelect(selection) {
   selectedMails.value = selection
 }
 
-function handleRefresh() {
+async function handleRefresh() {
+  await fetchMailList()
   ElMessage.success('刷新成功')
 }
 
-function handleDelete() {
+async function handleDelete() {
   if (selectedMails.value.length === 0) {
     ElMessage.warning('请先选择要删除的邮件')
     return
@@ -78,16 +58,31 @@ function handleDelete() {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    const ids = selectedMails.value.map((m) => m.id)
-    mailList.value = mailList.value.filter((m) => !ids.includes(m.id))
-    selectedMails.value = []
-    ElMessage.success('删除成功')
-  }).catch(() => {})
+  })
+    .then(async () => {
+      try {
+        // 批量删除邮件
+        await Promise.all(selectedMails.value.map((m) => mailService.deleteMail(m.id)))
+        ElMessage.success('删除成功')
+        selectedMails.value = []
+        await fetchMailList() // 刷新列表
+      } catch (error) {
+        ElMessage.error('删除失败')
+        console.error('Delete error:', error)
+      }
+    })
+    .catch(() => {})
 }
 
-function handleViewMail(row) {
-  ElMessage.info(`查看邮件详情（后续开发）: ${row.subject}`)
+async function handleViewMail(row) {
+  try {
+    // 标记为已读
+    await mailService.markAsRead(row.id)
+    // 跳转到详情页（如果有）
+    ElMessage.info(`查看邮件详情: ${row.subject}（后续开发详情页）`)
+  } catch (error) {
+    console.error('Mark as read error:', error)
+  }
 }
 
 function handleCompose() {
@@ -97,6 +92,11 @@ function handleCompose() {
 // 勾选行样式
 function tableRowClassName({ row }) {
   return row.isRead ? '' : 'unread-row'
+}
+
+// 分页变化时重新拉取
+function handlePageChange() {
+  fetchMailList()
 }
 </script>
 
@@ -109,7 +109,7 @@ function tableRowClassName({ row }) {
           <el-button type="primary" @click="handleCompose">
             <el-icon><EditPen /></el-icon> 写信
           </el-button>
-          <el-button @click="handleRefresh">
+          <el-button @click="handleRefresh" :loading="loading">
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
           <el-button
@@ -131,10 +131,11 @@ function tableRowClassName({ row }) {
         </div>
       </div>
 
-      <!-- 邮件列表 -->
+      <!-- 邮件列表（使用 v-for 循环渲染） -->
       <el-table
         :data="mailList"
         style="width: 100%"
+        v-loading="loading"
         @selection-change="handleSelect"
         @row-click="handleViewMail"
         :row-class-name="tableRowClassName"
@@ -160,7 +161,16 @@ function tableRowClassName({ row }) {
               <span :style="{ fontWeight: row.isRead ? 'normal' : 'bold' }">
                 {{ row.subject }}
               </span>
-              <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px">
+              <span
+                style="
+                  color: #909399;
+                  font-size: 13px;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  max-width: 300px;
+                "
+              >
                 — {{ row.preview }}
               </span>
             </div>
@@ -178,9 +188,10 @@ function tableRowClassName({ row }) {
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :total="mailList.length"
+          :total="total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
+          @change="handlePageChange"
           small
         />
       </div>

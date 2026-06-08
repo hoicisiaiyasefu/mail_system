@@ -169,6 +169,39 @@ public class MailService {
         );
     }
 
+    /**
+     * 发送邮件（支持附件）
+     *
+     * @param senderUserId 发件人用户 ID
+     * @param toAddresses  收件人地址
+     * @param subject      主题
+     * @param content      正文
+     * @param ccAddresses  抄送地址（可选）
+     * @param attachmentPath 附件路径（可选）
+     * @return 结果 Map
+     */
+    @Transactional
+    public Map<String, Object> sendMailWithAttachment(Long senderUserId, String toAddresses,
+                                                      String subject, String content,
+                                                      String ccAddresses, String attachmentPath) {
+        // 先调用基础发送方法
+        Map<String, Object> result = sendMail(senderUserId, toAddresses, subject, content, ccAddresses);
+
+        // 如果有附件，关联到已发送的邮件
+        if (attachmentPath != null && !attachmentPath.isEmpty()) {
+            Long mailId = (Long) result.get("id");
+            Mail mail = findById(mailId);
+            if (mail != null) {
+                mail.setAttachmentPath(attachmentPath);
+                mail.setHasAttachments(true);
+                saveMail(mail);
+                log.info("附件已关联到邮件: mailId={}, path={}", mailId, attachmentPath);
+            }
+        }
+
+        return result;
+    }
+
     // ============================================================
     // 私有辅助方法
     // ============================================================

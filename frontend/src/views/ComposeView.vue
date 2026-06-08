@@ -3,10 +3,12 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Promotion, EditPen, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { mailService } from '@/api/mailService'
 
 const router = useRouter()
 
 const composeFormRef = ref(null)
+const uploadRef = ref(null)
 
 const composeForm = reactive({
   to: '',
@@ -26,22 +28,69 @@ const rules = {
 }
 
 const sending = ref(false)
+const attachedFiles = ref([]) // 保存已选择的文件
 
 function handleSend() {
-  composeFormRef.value?.validate((valid) => {
+  composeFormRef.value?.validate(async (valid) => {
     if (!valid) return
     sending.value = true
-    // 模拟发送
-    setTimeout(() => {
-      sending.value = false
+    try {
+      // 调用后端发送邮件接口，传递 FormData
+      const response = await mailService.sendMail({
+        to: composeForm.to,
+        cc: composeForm.cc,
+        subject: composeForm.subject,
+        body: composeForm.body,
+        files: attachedFiles.value, // 文件数组直接传递
+      })
+
       ElMessage.success('邮件发送成功！')
-      router.push('/inbox')
-    }, 1500)
+      // 清空表单和文件
+      composeForm.to = ''
+      composeForm.cc = ''
+      composeForm.subject = ''
+      composeForm.body = ''
+      attachedFiles.value = []
+      uploadRef.value?.clearFiles()
+      
+      // 返回收件箱
+      setTimeout(() => {
+        router.push('/inbox')
+      }, 1500)
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || '发送失败，请稍后重试')
+      console.error('Send mail error:', error)
+    } finally {
+      sending.value = false
+    }
   })
 }
 
 function handleDraft() {
   ElMessage.success('已保存到草稿箱（后续开发）')
+}
+
+/**
+ * 处理文件上传前的事件
+ * 限制文件大小和数量
+ */
+function handleExceed(files) {
+  ElMessage.warning('最多上传 3 个附件')
+}
+
+/**
+ * 文件被添加时的回调
+ */
+function handleFileChange(uploadFile, uploadFiles) {
+  // 更新 attachedFiles，保存文件对象供发送时使用
+  attachedFiles.value = uploadFiles.map((f) => f.raw)
+}
+
+/**
+ * 删除附件
+ */
+function handleRemoveFile(uploadFile, uploadFiles) {
+  attachedFiles.value = uploadFiles.map((f) => f.raw)
 }
 </script>
 
@@ -81,10 +130,13 @@ function handleDraft() {
 
         <el-form-item label="附件">
           <el-upload
+            ref="uploadRef"
             action="#"
             :auto-upload="false"
             :limit="3"
-            :on-exceed="() => ElMessage.warning('最多上传 3 个附件')"
+            :on-exceed="handleExceed"
+            @change="handleFileChange"
+            @remove="handleRemoveFile"
           >
             <el-button type="primary" plain>
               <el-icon><UploadFilled /></el-icon> 添加附件
