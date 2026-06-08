@@ -4,12 +4,31 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 public class FileStorageService {
 
-    private final String basePath = "D:/mail_storage/";
+    /**
+     * 附件存储基础路径，自动适配操作系统
+     * Windows: D:/mail_storage/
+     * Linux/macOS: ./mail_storage/ (项目运行目录下)
+     */
+    private final String basePath;
+
+    public FileStorageService() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("windows")) {
+            this.basePath = "D:/mail_storage/";
+        } else {
+            // Linux/macOS：在用户目录下创建 .mail_storage 目录
+            String userHome = System.getProperty("user.home");
+            this.basePath = userHome + "/.mail_storage/";
+        }
+    }
 
     public String saveFile(MultipartFile file) {
 
@@ -18,19 +37,17 @@ public class FileStorageService {
         }
 
         try {
-            File dir = new File(basePath);
-            if (!dir.exists()) {
-                dir.mkdirs();
+            Path dir = Paths.get(basePath);
+            if (!Files.exists(dir)) {
+                Files.createDirectories(dir);
             }
 
-            String fileName =
-                    UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path target = dir.resolve(fileName);
 
-            File target = new File(basePath + fileName);
+            file.transferTo(target.toFile());
 
-            file.transferTo(target);
-
-            return target.getAbsolutePath();
+            return target.toAbsolutePath().toString();
 
         } catch (Exception e) {
             throw new RuntimeException("附件保存失败", e);

@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, Message } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { register } from '@/api/auth'
 
 const router = useRouter()
 
@@ -44,16 +45,26 @@ const rules = {
 
 const loading = ref(false)
 
-function handleRegister() {
-  registerFormRef.value?.validate((valid) => {
-    if (!valid) return
-    loading.value = true
-    setTimeout(() => {
-      loading.value = false
-      ElMessage.success('注册成功！请登录')
-      router.push('/login')
-    }, 1000)
-  })
+async function handleRegister() {
+  const valid = await registerFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    const res = await register(registerForm.username, registerForm.password, registerForm.email)
+    const data = res.data
+    if (data.error) {
+      ElMessage.error(data.error)
+      return
+    }
+    ElMessage.success('注册成功！请登录')
+    router.push('/login')
+  } catch (err) {
+    const msg = err.response?.data?.error || '注册失败，请检查网络连接'
+    ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

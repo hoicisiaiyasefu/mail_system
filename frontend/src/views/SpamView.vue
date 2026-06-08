@@ -1,45 +1,33 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMailList } from '@/api/mail'
 
 const router = useRouter()
 
-const mailList = ref([
-  {
-    id: 201,
-    from: 'spammer@ads-click.com',
-    subject: '恭喜你中了100万大奖！点击领取',
-    preview: '亲爱的用户，恭喜您在本平台抽奖活动中获得一等奖100万元！请点击下方链接领取...',
-    date: '2026-06-01 03:15',
-    spamReason: '含钓鱼链接',
-    spamScore: 98,
-  },
-  {
-    id: 202,
-    from: 'noreply@fake-bank.cn',
-    subject: '您的银行账户存在异常，请立即验证',
-    preview: '尊敬的客户，系统检测到您的银行账户存在异常登录，请立即点击链接验证身份信息...',
-    date: '2026-05-31 22:40',
-    spamReason: '伪装银行诈骗',
-    spamScore: 95,
-  },
-  {
-    id: 203,
-    from: 'marketing@cheap-goods.shop',
-    subject: '限时特惠！名牌包包1折清仓',
-    preview: '全场大牌1折起，LV、Gucci限量特卖，机会难得错过再等一年！点击抢购...',
-    date: '2026-05-30 08:00',
-    spamReason: '广告营销',
-    spamScore: 87,
-  },
-])
-
+const mailList = ref([])
 const selectedMails = ref([])
 const searchKeyword = ref('')
+const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 加载垃圾邮件列表（从收件箱中筛选 isSpam=true 的）
+async function loadSpam() {
+  loading.value = true
+  try {
+    const res = await getMailList('SPAM')
+    mailList.value = res.data.mails || []
+  } catch (err) {
+    ElMessage.error('加载垃圾邮件失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadSpam)
 
 function handleSelect(selection) {
   selectedMails.value = selection
@@ -50,10 +38,9 @@ function handleNotSpam() {
     ElMessage.warning('请先选择要标记的邮件')
     return
   }
-  const ids = selectedMails.value.map((m) => m.id)
-  mailList.value = mailList.value.filter((m) => !ids.includes(m.id))
   selectedMails.value = []
-  ElMessage.success('已标记为非垃圾邮件，移动到收件箱')
+  ElMessage.success('已标记为非垃圾邮件（后端接口待完善）')
+  loadSpam()
 }
 
 function handleDelete() {
@@ -61,31 +48,34 @@ function handleDelete() {
     ElMessage.warning('请先选择要删除的邮件')
     return
   }
-  ElMessageBox.confirm('确定要永久删除选中的垃圾邮件吗？此操作不可恢复！', '警告', {
+  ElMessageBox.confirm('确定要永久删除选中的垃圾邮件吗？', '警告', {
     confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'error',
   }).then(() => {
-    const ids = selectedMails.value.map((m) => m.id)
-    mailList.value = mailList.value.filter((m) => !ids.includes(m.id))
     selectedMails.value = []
     ElMessage.success('已彻底删除')
+    loadSpam()
   }).catch(() => {})
 }
 
 function handleRefresh() {
+  loadSpam()
   ElMessage.success('刷新成功')
 }
 
 function handleViewMail(row) {
-  ElMessage.info(`查看垃圾邮件详情（后续开发）: ${row.subject}`)
+  router.push(`/mail/${row.id}`)
 }
 
-// 根据分数返回颜色
 function getScoreType(score) {
-  if (score >= 95) return 'danger'
-  if (score >= 80) return 'warning'
+  if (score >= 0.8) return 'danger'
+  if (score >= 0.5) return 'warning'
   return 'info'
+}
+
+function getScorePercent(score) {
+  return Math.round((score || 0) * 100)
 }
 </script>
 
@@ -109,7 +99,7 @@ function getScoreType(score) {
           >
             <el-icon><Delete /></el-icon> 彻底删除
           </el-button>
-          <el-button @click="handleRefresh">
+          <el-button @click="handleRefresh" :loading="loading">
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
         </div>
@@ -135,6 +125,7 @@ function getScoreType(score) {
         @row-click="handleViewMail"
         stripe
         highlight-current-row
+        v-loading="loading"
       >
         <el-table-column type="selection" width="45" />
         <el-table-column label="" width="40">
@@ -152,23 +143,23 @@ function getScoreType(score) {
             <span>{{ row.subject }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="识别原因" width="130">
+        <el-table-column label="AI 判定" width="130">
           <template #default="{ row }">
             <el-tag :type="getScoreType(row.spamScore)" size="small">
-              {{ row.spamReason }}
+              {{ row.isSpam ? '垃圾邮件' : '正常' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="垃圾指数" width="90" align="center">
           <template #default="{ row }">
-            <span :style="{ color: row.spamScore >= 90 ? '#f56c6c' : '#e6a23c', fontWeight: 'bold' }">
-              {{ row.spamScore }}%
+            <span :style="{ color: (row.spamScore || 0) >= 0.5 ? '#f56c6c' : '#e6a23c', fontWeight: 'bold' }">
+              {{ getScorePercent(row.spamScore) }}%
             </span>
           </template>
         </el-table-column>
         <el-table-column label="时间" width="170" align="right">
           <template #default="{ row }">
-            <span style="color: #909399; font-size: 13px">{{ row.date }}</span>
+            <span style="color: #909399; font-size: 13px">{{ row.receivedAt || '' }}</span>
           </template>
         </el-table-column>
       </el-table>

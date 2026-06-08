@@ -3,8 +3,11 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { login } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const loginFormRef = ref(null)
 
@@ -26,21 +29,32 @@ const rules = {
 
 const loading = ref(false)
 
-function handleLogin() {
-  loginFormRef.value?.validate((valid) => {
-    if (!valid) return
-    loading.value = true
-    // 模拟登录请求
-    setTimeout(() => {
-      loading.value = false
-      ElMessage.success('登录成功！')
-      router.push('/inbox')
-    }, 1000)
-  })
+async function handleLogin() {
+  const valid = await loginFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    const res = await login(loginForm.username, loginForm.password)
+    const data = res.data
+    if (data.error) {
+      ElMessage.error(data.error)
+      return
+    }
+    // 保存 token 和用户信息
+    authStore.setAuth(data.token, data.user)
+    ElMessage.success('登录成功！')
+    router.push('/inbox')
+  } catch (err) {
+    const msg = err.response?.data?.error || '登录失败，请检查网络连接'
+    ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
 }
 
 function goToRegister() {
-  ElMessage.info('注册功能将在后续开发')
+  router.push('/register')
 }
 </script>
 

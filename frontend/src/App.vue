@@ -9,9 +9,11 @@ import {
   WarningFilled,
   DocumentCopy,
 } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const showMailLayout = computed(() => route.meta.layout === 'mail')
 
@@ -31,6 +33,7 @@ function handleMenuSelect(index) {
 }
 
 function handleLogout() {
+  authStore.logout()
   router.push('/login')
 }
 </script>
@@ -82,7 +85,7 @@ function handleLogout() {
         </span>
         <div class="user-info">
           <el-icon><UserFilled /></el-icon>
-          <span>用户名</span>
+          <span>{{ authStore.username }}</span>
           <el-button type="danger" size="small" text @click="handleLogout">退出</el-button>
         </div>
       </header>

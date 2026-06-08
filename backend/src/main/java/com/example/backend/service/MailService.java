@@ -1,18 +1,17 @@
 package com.example.backend.service;
 
-import com.example.backend.ai.SpamDetectorService;
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.MailUser;
 import com.example.backend.repository.MailRepository;
 import com.example.backend.repository.MailUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +70,18 @@ public class MailService {
         Mail savedMail = mailRepository.save(mail);
         log.info("新邮件已保存: id={}, from={}, subject={}", savedMail.getId(), fromAddress, subject);
 
-        // 异步触发 AI 垃圾邮件检测（委托 SpamAsyncService 确保 @Async 代理生效）
-        spamAsyncService.detectAndUpdate(savedMail);
+        // 在当前事务提交后再触发 AI 分析（确保异步线程能看到数据）
+        final Long mailId = savedMail.getId();
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        Mail persisted = mailRepository.findById(mailId).orElse(null);
+                        if (persisted != null) {
+                            spamAsyncService.detectAndUpdate(persisted);
+                        }
+                    }
+                });
 
         return savedMail;
     }
@@ -89,10 +98,23 @@ public class MailService {
     }
 
     public List<Mail> listInboxByUserId(Long userId) {
+        return listByFolder(userId, "INBOX");
+    }
+
+    /**
+     * 按文件夹查询邮件列表（支持 INBOX, SPAM, SENT, DRAFT, TRASH）
+     */
+    public List<Mail> listByFolder(Long userId, String folderName) {
         MailUser owner = mailUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在: id=" + userId));
+        Mail.MailFolder folder;
+        try {
+            folder = Mail.MailFolder.valueOf(folderName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            folder = Mail.MailFolder.INBOX;
+        }
         return mailRepository.findByOwnerAndFolderAndDeletedFlagFalseOrderByReceivedAtDescCreatedAtDesc(
-                owner, Mail.MailFolder.INBOX);
+                owner, folder);
     }
 
     /**
@@ -187,7 +209,15 @@ public class MailService {
                 .orElseGet(() -> {
                     MailUser newUser = new MailUser();
                     newUser.setEmailAddress(email);
-                    newUser.setUsername(email.split("@")[0]);
+                    // 用邮箱前缀作为用户名，冲突时追加数字后缀
+                    String baseUsername = email.split("@")[0];
+                    String username = baseUsername;
+                    int suffix = 1;
+                    while (mailUserRepository.existsByUsername(username)) {
+                        username = baseUsername + suffix;
+                        suffix++;
+                    }
+                    newUser.setUsername(username);
                     newUser.setPasswordHash(""); // 系统内部用户，无密码
                     return mailUserRepository.save(newUser);
                 });

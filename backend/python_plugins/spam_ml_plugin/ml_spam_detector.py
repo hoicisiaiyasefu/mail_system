@@ -330,6 +330,18 @@ class RuleEngine:
         (r'[1-9]\d{4,}', 'long_number', 0.10),            # 长数字
         (r'加.*微信', 'add_wechat', 0.20),                # 加微信
         (r'[A-Z]{8,}', 'long_uppercase', 0.15),           # 长串大写
+        # 乱码/随机文本检测
+        (r'^[a-z0-9]{10,}$', 'alphanumeric_only', 0.35), # 纯字母数字无空格（乱码特征）
+        (r'[a-z]{15,}', 'long_lowercase', 0.25),          # 长串小写字母（无意义）
+    ]
+
+    # 键盘乱打特征（QWERTY键盘连续按键）
+    KEYBOARD_MASH_PATTERNS = [
+        'qwerty', 'asdfgh', 'zxcvbn', 'qazwsx', 'wsxedc',
+        'rfvtgb', 'yhnmju', 'asdfghjkl', 'qwertyuiop',
+        '123456', '12345', 'abcdef', 'aaaaa', 'bbbbb',
+        'xcvbnm', 'sdfghj', 'dfghjk', 'fghjkl', 'ghjkl;',
+        'edcft', 'ikmju', 'ujmik', 'olp', 'plok',
     ]
 
     @classmethod
@@ -380,6 +392,49 @@ class RuleEngine:
 
         # 邮件长度（短邮件可能是垃圾邮件）
         features['content_length'] = len(email_content)
+
+        # ============================================================
+        # 乱码/随机文本检测（新增）
+        # ============================================================
+        # 是否有空格/换行（正常邮件通常有）
+        has_whitespace = bool(re.search(r'\s', email_content))
+        features['has_whitespace'] = 1.0 if has_whitespace else 0.0
+
+        # 中文/英文有效词汇占比
+        chinese_chars = len(re.findall(r'[一-鿿]', email_content))
+        english_words = len(re.findall(r'\b[a-z]{2,}\b', content_lower))
+        total_chars = max(len(email_content), 1)
+        features['chinese_ratio'] = chinese_chars / total_chars
+        features['english_word_count'] = float(english_words)
+
+        # 键盘乱打检测
+        mash_hits = 0
+        for pattern in cls.KEYBOARD_MASH_PATTERNS:
+            if pattern in content_lower:
+                mash_hits += 1
+        features['keyboard_mash_hits'] = float(mash_hits)
+
+        # 乱码综合评分：无空格 + 无有效词汇 + 纯字母数字
+        gibberish_score = 0.0
+        # 注意：中文文本天然没有空格，不能因此扣分
+        if not has_whitespace and total_chars > 8 and chinese_chars == 0:
+            # 无空白字符的长文本（非中文）→ 可疑
+            gibberish_score += 0.30
+        if chinese_chars == 0 and english_words == 0 and total_chars > 8:
+            # 没有任何有效词汇 → 很可疑
+            gibberish_score += 0.40
+        elif chinese_chars == 0 and english_words <= 2 and total_chars > 15 and mash_hits >= 2:
+            # 少量"英文词"但其实是键盘乱打 → 可疑
+            gibberish_score += 0.35
+        if mash_hits >= 3:
+            # 大量键盘乱打 → 极其可疑（几乎可以确定是垃圾/无意义内容）
+            gibberish_score = 0.80  # 直接覆盖为高分，不管其他条件
+        elif mash_hits >= 1:
+            gibberish_score += 0.25
+        if total_chars > 5 and total_chars < 200 and chinese_chars == 0 and english_words <= 1 and not has_whitespace:
+            # 短乱码文本（5-200字符，无词汇，无空格）→ 高度可疑
+            gibberish_score += 0.30
+        features['gibberish_score'] = min(gibberish_score, 1.0)
 
         return features
 
@@ -478,6 +533,13 @@ class MLSpamDetector(EmailPluginBase):
         # 规则引擎特征
         rule_features = self.rule_engine.extract_features(full_text)
 
+        # 对纯正文再做一次乱码检测（防止主题中的正常词汇掩盖正文乱码）
+        content_features = self.rule_engine.extract_features(content)
+        content_gibberish = content_features.get('gibberish_score', 0)
+        full_gibberish = rule_features.get('gibberish_score', 0)
+        # 取正文和全文的乱码评分最大值
+        rule_features['gibberish_score'] = max(full_gibberish, content_gibberish)
+
         # 规则引擎评分
         rule_spam_score = self._rule_based_score(rule_features)
 
@@ -574,6 +636,20 @@ class MLSpamDetector(EmailPluginBase):
         # 叹号占比
         score += min(features.get('exclamation_ratio', 0) * 20, 1.0) * 0.10
         weights += 0.10
+
+        # 乱码/随机文本评分（高权重：乱码是强垃圾信号）
+        gibberish = features.get('gibberish_score', 0)
+        if gibberish >= 0.5:
+            # 中高乱码 → 直接返回高分，不与其他低分特征平均
+            return 0.65 + (gibberish - 0.5) * 0.7  # 0.5→0.65, 0.7→0.79, 1.0→1.0
+        score += gibberish * 1.5
+        weights += 1.5
+
+        # 内容长度异常（极短乱码 → 更强信号）
+        content_len = features.get('content_length', 0)
+        if content_len > 0 and features.get('gibberish_score', 0) > 0.5 and content_len < 100:
+            score += 0.30
+            weights += 0.30
 
         return score / max(weights, 1.0)
 

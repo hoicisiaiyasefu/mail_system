@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.ai.SummaryService;
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.MailUser;
 import com.example.backend.service.FileStorageService;
@@ -13,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 /**
- * 邮件接口 - 邮件接收、查询与垃圾邮件检测
+ * 邮件接口 - 邮件接收、查询、AI 分析与垃圾邮件检测
  */
 @RestController
 @RequestMapping("/api/mail")
@@ -23,17 +24,20 @@ public class MailController {
     private final MailService mailService;
     private final SpamAsyncService spamAsyncService;
     private final FileStorageService fileStorageService;
+    private final SummaryService summaryService;
 
     public MailController(MailService mailService,
                           SpamAsyncService spamAsyncService,
-                          FileStorageService fileStorageService) {
+                          FileStorageService fileStorageService,
+                          SummaryService summaryService) {
         this.mailService = mailService;
         this.spamAsyncService = spamAsyncService;
         this.fileStorageService = fileStorageService;
+        this.summaryService = summaryService;
     }
 
     /**
-     * 接收新邮件 - 保存后自动在后台触发 AI 垃圾邮件检测
+     * 接收新邮件 - 保存后自动在后台触发 AI 综合分析管道
      * POST /api/mail/receive
      */
     @PostMapping("/receive")
@@ -59,7 +63,7 @@ public class MailController {
                     "to", savedMail.getToAddresses(),
                     "subject", savedMail.getSubject(),
                     "status", "RECEIVED",
-                    "message", "邮件已接收，AI 正在后台检测垃圾邮件..."
+                    "message", "邮件已接收，AI 正在后台分析（垃圾检测+安全分析+优先级+摘要）..."
             ));
 
         } catch (Exception e) {
@@ -70,7 +74,7 @@ public class MailController {
     }
 
     /**
-     * 查询单封邮件（含 is_spam 状态）
+     * 查询单封邮件（含 AI 分析结果）
      * GET /api/mail/{id}
      */
     @GetMapping("/{id}")
@@ -79,18 +83,25 @@ public class MailController {
         if (mail == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(Map.of(
-                "id", mail.getId(),
-                "from", mail.getFromAddress(),
-                "to", mail.getToAddresses(),
-                "subject", mail.getSubject(),
-                "content", mail.getContent(),
-                "isSpam", mail.getIsSpam(),
-                "spamScore", mail.getSpamScore(),
-                "folder", mail.getFolder().name(),
-                "status", mail.getStatus().name(),
-                "receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null
-        ));
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("id", mail.getId());
+        resp.put("from", mail.getFromAddress());
+        resp.put("to", mail.getToAddresses());
+        resp.put("subject", mail.getSubject());
+        resp.put("content", mail.getContent());
+        resp.put("isSpam", mail.getIsSpam());
+        resp.put("spamScore", mail.getSpamScore());
+        resp.put("folder", mail.getFolder().name());
+        resp.put("status", mail.getStatus().name());
+        resp.put("receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null);
+        // AI 分析字段
+        resp.put("riskLevel", mail.getRiskLevel());
+        resp.put("riskScore", mail.getRiskScore());
+        resp.put("priorityLevel", mail.getPriorityLevel());
+        resp.put("priorityScore", mail.getPriorityScore());
+        resp.put("summary", mail.getSummary());
+        resp.put("aiAnalyzed", mail.getAiAnalyzed());
+        return ResponseEntity.ok(resp);
     }
 
     /**
@@ -108,10 +119,10 @@ public class MailController {
 
             Mail savedMail = mailService.receiveMail(fromAddress, toAddresses, subject, content, contentType);
 
-            // 等待一小段时间让异步检测完成
+            // 等待 AI 异步分析完成
             Thread.sleep(3000);
 
-            // 重新查询获取最新的 is_spam 状态
+            // 重新查询获取最新的分析状态
             Mail updated = mailService.findById(savedMail.getId());
 
             return ResponseEntity.ok(Map.of(
@@ -119,6 +130,10 @@ public class MailController {
                     "isSpam", updated != null ? updated.getIsSpam() : false,
                     "spamScore", updated != null ? updated.getSpamScore() : 0.0,
                     "folder", updated != null ? updated.getFolder().name() : "INBOX",
+                    "riskLevel", updated != null ? updated.getRiskLevel() : null,
+                    "priorityLevel", updated != null ? updated.getPriorityLevel() : null,
+                    "summary", updated != null ? updated.getSummary() : null,
+                    "aiAnalyzed", updated != null ? updated.getAiAnalyzed() : false,
                     "from", savedMail.getFromAddress(),
                     "subject", savedMail.getSubject()
             ));
@@ -131,7 +146,7 @@ public class MailController {
     }
 
     /**
-     * 重新检测邮件垃圾状态（手动触发）
+     * 重新运行完整 AI 分析管道（手动触发）
      * POST /api/mail/{id}/recheck-spam
      */
     @PostMapping("/{id}/recheck-spam")
@@ -145,9 +160,94 @@ public class MailController {
 
         return ResponseEntity.ok(Map.of(
                 "id", mail.getId(),
-                "message", "已触发异步重新检测，请稍后查询结果"
+                "message", "已触发异步 AI 综合分析管道，请稍后查询结果"
         ));
     }
+
+    // ============================================================
+    // 邮件摘要生成接口（C模块 加分项）
+    // ============================================================
+
+    /**
+     * 为指定邮件生成摘要（使用 LLM，不可用时自动降级）
+     * POST /api/mail/{id}/summary
+     *
+     * 请求体（可选）：
+     * { "maxLength": 80 }   // 摘要最大长度，默认120
+     */
+    @PostMapping("/{id}/summary")
+    public ResponseEntity<Map<String, Object>> generateSummary(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+
+        Mail mail = mailService.findById(id);
+        if (mail == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        int maxLength = 120;
+        if (body != null && body.containsKey("maxLength")) {
+            try {
+                maxLength = ((Number) body.get("maxLength")).intValue();
+            } catch (Exception ignored) {
+            }
+        }
+
+        Map<String, Object> result = summaryService.summarize(
+                mail.getId(), mail.getFromAddress(),
+                mail.getSubject(), mail.getContent(), maxLength);
+
+        // 如果生成成功，回写到数据库
+        String summaryText = (String) result.get("summary");
+        if (summaryText != null && !summaryText.isBlank() && !result.containsKey("error")) {
+            mail.setSummary(summaryText);
+            mailService.saveMail(mail);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "id", mail.getId(),
+                "summary", summaryText,
+                "method", result.getOrDefault("method", "unknown"),
+                "length", result.getOrDefault("length", 0)
+        ));
+    }
+
+    /**
+     * 获取邮件 AI 分析报告
+     * GET /api/mail/{id}/ai-report
+     */
+    @GetMapping("/{id}/ai-report")
+    public ResponseEntity<Map<String, Object>> getAiReport(@PathVariable Long id) {
+        Mail mail = mailService.findById(id);
+        if (mail == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "id", mail.getId(),
+                "subject", mail.getSubject(),
+                "aiAnalyzed", mail.getAiAnalyzed(),
+                "spam", Map.of(
+                        "isSpam", mail.getIsSpam(),
+                        "spamScore", mail.getSpamScore()
+                ),
+                "security", Map.of(
+                        "riskLevel", mail.getRiskLevel(),
+                        "riskScore", mail.getRiskScore()
+                ),
+                "priority", Map.of(
+                        "priorityLevel", mail.getPriorityLevel(),
+                        "priorityScore", mail.getPriorityScore()
+                ),
+                "summary", Map.of(
+                        "text", mail.getSummary()
+                )
+        ));
+    }
+
+    // ============================================================
+    // 邮件发送与列表
+    // ============================================================
 
     /**
      * 发送邮件 — 需登录（JWT Token）
@@ -273,7 +373,9 @@ public class MailController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<?> listInbox(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<?> listMails(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam(value = "folder", defaultValue = "INBOX") String folder) {
         String token = extractBearerToken(authHeader);
         if (token == null || !JwtUtil.validateToken(token)) {
             return ResponseEntity.status(401).body(Map.of(
@@ -283,19 +385,26 @@ public class MailController {
 
         Long userId = JwtUtil.getUserIdFromToken(token);
         try {
-            var mails = mailService.listInboxByUserId(userId);
-            var data = mails.stream().map(mail -> Map.<String, Object>of(
-                    "id", mail.getId(),
-                    "from", mail.getFromAddress(),
-                    "to", mail.getToAddresses(),
-                    "subject", mail.getSubject(),
-                    "receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null,
-                    "isSpam", mail.getIsSpam(),
-                    "hasAttachments", mail.getHasAttachments(),
-                    "attachmentPath", mail.getAttachmentPath(),
-                    "folder", mail.getFolder().name(),
-                    "status", mail.getStatus().name()
-            )).toList();
+            var mails = mailService.listByFolder(userId, folder);
+            var data = mails.stream().map(mail -> {
+                java.util.Map<String, Object> item = new java.util.HashMap<>();
+                item.put("id", mail.getId());
+                item.put("from", mail.getFromAddress());
+                item.put("to", mail.getToAddresses());
+                item.put("subject", mail.getSubject());
+                item.put("receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null);
+                item.put("isSpam", mail.getIsSpam());
+                item.put("hasAttachments", mail.getHasAttachments());
+                item.put("attachmentPath", mail.getAttachmentPath());
+                item.put("folder", mail.getFolder().name());
+                item.put("status", mail.getStatus().name());
+                // AI 分析字段（列表视图精简）
+                item.put("priorityLevel", mail.getPriorityLevel());
+                item.put("riskLevel", mail.getRiskLevel());
+                item.put("summary", mail.getSummary());
+                item.put("aiAnalyzed", mail.getAiAnalyzed());
+                return item;
+            }).toList();
             return ResponseEntity.ok(Map.of("mails", data));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
@@ -304,4 +413,3 @@ public class MailController {
         }
     }
 }
-

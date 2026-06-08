@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Promotion, EditPen, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { sendMail } from '@/api/mail'
 
 const router = useRouter()
 
@@ -27,17 +28,26 @@ const rules = {
 
 const sending = ref(false)
 
-function handleSend() {
-  composeFormRef.value?.validate((valid) => {
-    if (!valid) return
-    sending.value = true
-    // 模拟发送
-    setTimeout(() => {
-      sending.value = false
-      ElMessage.success('邮件发送成功！')
-      router.push('/inbox')
-    }, 1500)
-  })
+async function handleSend() {
+  const valid = await composeFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  sending.value = true
+  try {
+    const res = await sendMail(composeForm.to, composeForm.subject, composeForm.body, composeForm.cc)
+    const data = res.data
+    if (data.error) {
+      ElMessage.error(data.error)
+      return
+    }
+    ElMessage.success('邮件发送成功！收件人将收到 AI 自动分析。')
+    router.push('/inbox')
+  } catch (err) {
+    const msg = err.response?.data?.error || '发送失败，请检查网络连接'
+    ElMessage.error(msg)
+  } finally {
+    sending.value = false
+  }
 }
 
 function handleDraft() {

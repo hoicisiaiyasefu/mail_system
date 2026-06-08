@@ -1,71 +1,48 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getInboxList } from '@/api/mail'
 
 const router = useRouter()
 
-// 模拟收件箱数据
-const mailList = ref([
-  {
-    id: 1,
-    from: 'zhangsan@example.com',
-    subject: '关于项目进展的汇报',
-    preview: '您好，附件是本周的项目进展汇报，请查收。主要内容包括：1. 前端页面开发进度...',
-    date: '2026-05-31 14:30',
-    isRead: false,
-    hasAttachment: true,
-  },
-  {
-    id: 2,
-    from: 'lisi@company.com',
-    subject: '会议邀请：需求评审',
-    preview: '各位同事，定于本周五下午3点在会议室A进行需求评审会议，请大家提前准备...',
-    date: '2026-05-31 10:15',
-    isRead: false,
-    hasAttachment: false,
-  },
-  {
-    id: 3,
-    from: 'wangwu@school.edu',
-    subject: '实训周报提交提醒',
-    preview: '同学们请注意，第一周的实训周报需要在周五前提交，格式请参考模板...',
-    date: '2026-05-30 16:45',
-    isRead: true,
-    hasAttachment: true,
-  },
-  {
-    id: 4,
-    from: 'admin@mail-system.com',
-    subject: '欢迎使用邮件系统',
-    preview: '欢迎注册使用本邮件系统！以下是系统的使用指南，帮助您快速上手...',
-    date: '2026-05-29 09:00',
-    isRead: true,
-    hasAttachment: false,
-  },
-  {
-    id: 5,
-    from: 'noreply@github.com',
-    subject: '[mail-system] New pull request #12',
-    preview: 'feat: 添加前端登录页面和收件箱页面 — 新增了 Vue3 前端登录页面...',
-    date: '2026-05-28 22:10',
-    isRead: true,
-    hasAttachment: false,
-  },
-])
-
+const mailList = ref([])
 const selectedMails = ref([])
 const searchKeyword = ref('')
+const loading = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 加载收件箱数据
+async function loadInbox() {
+  loading.value = true
+  try {
+    const res = await getInboxList()
+    mailList.value = (res.data.mails || []).map((m) => ({
+      ...m,
+      preview: (m.summary || m.subject || '').substring(0, 80),
+      date: m.receivedAt || '',
+      isRead: m.readFlag !== undefined ? m.readFlag : true,
+    }))
+  } catch (err) {
+    ElMessage.error('加载收件箱失败：' + (err.response?.data?.error || err.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadInbox)
+
+const filteredList = ref(mailList)
 
 function handleSelect(selection) {
   selectedMails.value = selection
 }
 
 function handleRefresh() {
+  loadInbox()
   ElMessage.success('刷新成功')
 }
 
@@ -79,24 +56,27 @@ function handleDelete() {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    const ids = selectedMails.value.map((m) => m.id)
-    mailList.value = mailList.value.filter((m) => !ids.includes(m.id))
     selectedMails.value = []
-    ElMessage.success('删除成功')
+    ElMessage.success('删除成功（后端接口待完善）')
   }).catch(() => {})
 }
 
 function handleViewMail(row) {
-  ElMessage.info(`查看邮件详情（后续开发）: ${row.subject}`)
+  router.push(`/mail/${row.id}`)
 }
 
 function handleCompose() {
   router.push('/compose')
 }
 
-// 勾选行样式
 function tableRowClassName({ row }) {
   return row.isRead ? '' : 'unread-row'
+}
+
+// AI标签颜色
+function getPriorityColor(level) {
+  const map = { critical: '#f56c6c', high: '#e6a23c', normal: '#909399', low: '#c0c4cc' }
+  return map[level] || '#909399'
 }
 </script>
 
@@ -109,7 +89,7 @@ function tableRowClassName({ row }) {
           <el-button type="primary" @click="handleCompose">
             <el-icon><EditPen /></el-icon> 写信
           </el-button>
-          <el-button @click="handleRefresh">
+          <el-button @click="handleRefresh" :loading="loading">
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
           <el-button
@@ -140,11 +120,22 @@ function tableRowClassName({ row }) {
         :row-class-name="tableRowClassName"
         stripe
         highlight-current-row
+        v-loading="loading"
       >
         <el-table-column type="selection" width="45" />
-        <el-table-column label="" width="40">
+        <el-table-column label="" width="70">
           <template #default="{ row }">
-            <span v-if="row.hasAttachment">📎</span>
+            <div style="display: flex; gap: 4px; align-items: center">
+              <span v-if="row.hasAttachments">📎</span>
+              <el-tag
+                v-if="row.priorityLevel"
+                :color="getPriorityColor(row.priorityLevel)"
+                size="small"
+                style="color: #fff; border: none; font-size: 11px"
+              >
+                {{ row.priorityLevel === 'critical' ? '紧急' : row.priorityLevel === 'high' ? '重要' : row.priorityLevel === 'normal' ? '普通' : '低' }}
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="发件人" width="180">
@@ -154,16 +145,24 @@ function tableRowClassName({ row }) {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="主题" min-width="320">
+        <el-table-column label="主题" min-width="280">
           <template #default="{ row }">
             <div style="display: flex; align-items: center; gap: 8px">
               <span :style="{ fontWeight: row.isRead ? 'normal' : 'bold' }">
                 {{ row.subject }}
               </span>
-              <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px">
-                — {{ row.preview }}
+              <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px">
+                — {{ row.summary || row.subject }}
               </span>
+              <el-tag v-if="row.isSpam" type="danger" size="small">垃圾</el-tag>
+              <el-tag v-if="row.riskLevel && row.riskLevel !== 'safe'" type="warning" size="small">{{ row.riskLevel }}</el-tag>
             </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="AI" width="60" align="center">
+          <template #default="{ row }">
+            <span v-if="row.aiAnalyzed" title="AI已分析">🤖</span>
+            <span v-else title="等待AI分析" style="opacity: 0.3">⏳</span>
           </template>
         </el-table-column>
         <el-table-column label="时间" width="170" align="right">

@@ -96,6 +96,27 @@ public class Mail {
     @Column(name = "is_spam", nullable = false)
     private Boolean isSpam = false;
 
+    // ======= C模块：AI 安全分析字段 =======
+    @Column(name = "risk_level", length = 20)
+    private String riskLevel;           // safe / low / medium / high / critical
+
+    @Column(name = "risk_score", precision = 5, scale = 4)
+    private BigDecimal riskScore;       // 综合风险评分 0~1
+
+    // ======= C模块：AI 优先级排序字段 =======
+    @Column(name = "priority_score", precision = 5, scale = 4)
+    private BigDecimal priorityScore;   // 优先级评分 0~1
+
+    @Column(name = "priority_level", length = 20)
+    private String priorityLevel;       // critical / high / normal / low
+
+    // ======= C模块：AI 邮件摘要字段 =======
+    @Column(name = "summary", columnDefinition = "text")
+    private String summary;             // AI 生成的邮件摘要
+
+    @Column(name = "ai_analyzed", nullable = false)
+    private Boolean aiAnalyzed = false; // 是否已完成 AI 综合分析
+
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
@@ -107,8 +128,8 @@ public class Mail {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-	
-	// ======= B模块新增（附件路径）=======
+
+    // ======= B模块新增（附件路径）=======
     @Column(name = "attachment_path", length = 500)
     private String attachmentPath;
 

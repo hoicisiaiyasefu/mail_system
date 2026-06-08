@@ -6,24 +6,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 
-const mailList = ref([
-  {
-    id: 301,
-    to: 'zhangsan@example.com',
-    subject: '关于项目进展的汇报（草稿）',
-    preview: '您好，附件是本周的项目进展汇报，请查收...',
-    date: '2026-06-01 10:30',
-    hasAttachment: false,
-  },
-  {
-    id: 302,
-    to: '',
-    subject: '（无主题）',
-    preview: '会议记录：今天讨论的主要内容有...',
-    date: '2026-05-30 15:20',
-    hasAttachment: false,
-  },
-])
+// 草稿箱暂时使用本地存储（后端暂无草稿 API）
+const savedDrafts = localStorage.getItem('mail_drafts')
+const mailList = ref(savedDrafts ? JSON.parse(savedDrafts) : [])
 
 const selectedMails = ref([])
 const searchKeyword = ref('')
@@ -36,7 +21,7 @@ function handleSelect(selection) {
 
 function handleEditDraft(row) {
   router.push('/compose')
-  ElMessage.info('跳转到写信页继续编辑（后续实现预填充）')
+  ElMessage.info('已跳转到写信页（草稿预填充功能后续开发）')
 }
 
 function handleDelete() {
@@ -52,6 +37,7 @@ function handleDelete() {
     const ids = selectedMails.value.map((m) => m.id)
     mailList.value = mailList.value.filter((m) => !ids.includes(m.id))
     selectedMails.value = []
+    localStorage.setItem('mail_drafts', JSON.stringify(mailList.value))
     ElMessage.success('草稿已删除')
   }).catch(() => {})
 }
@@ -121,14 +107,14 @@ function handleRefresh() {
             <div style="display: flex; align-items: center; gap: 8px">
               <span>{{ row.subject }}</span>
               <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px">
-                — {{ row.preview }}
+                — {{ row.preview || '' }}
               </span>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="最后编辑" width="170" align="right">
           <template #default="{ row }">
-            <span style="color: #909399; font-size: 13px">{{ row.date }}</span>
+            <span style="color: #909399; font-size: 13px">{{ row.date || '' }}</span>
           </template>
         </el-table-column>
       </el-table>
