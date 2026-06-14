@@ -7,10 +7,16 @@ import com.example.backend.service.FileStorageService;
 import com.example.backend.service.MailService;
 import com.example.backend.service.SpamAsyncService;
 import com.example.backend.util.JwtUtil;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -598,6 +604,115 @@ public class MailController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", "查询收件列表失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 搜索邮件（按主题或正文模糊匹配）
+     * GET /api/mail/search?keyword=xxx
+     */
+    @GetMapping("/search")
+    public ResponseEntity<?> searchMail(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam(value = "keyword", required = false) String keyword) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        if (keyword == null || keyword.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "搜索关键字不能为空"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        try {
+            var mails = mailService.searchByKeyword(userId, keyword.trim());
+            var data = mails.stream().map(mail -> {
+                java.util.Map<String, Object> item = new java.util.HashMap<>();
+                item.put("id", mail.getId());
+                item.put("from", mail.getFromAddress());
+                item.put("to", mail.getToAddresses());
+                item.put("subject", mail.getSubject());
+                item.put("receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null);
+                item.put("isSpam", mail.getIsSpam());
+                item.put("hasAttachments", mail.getHasAttachments());
+                item.put("attachmentPath", mail.getAttachmentPath());
+                item.put("folder", mail.getFolder().name());
+                item.put("status", mail.getStatus().name());
+                item.put("readFlag", mail.getReadFlag());
+                item.put("priorityLevel", mail.getPriorityLevel());
+                item.put("riskLevel", mail.getRiskLevel());
+                item.put("summary", mail.getSummary());
+                item.put("aiAnalyzed", mail.getAiAnalyzed());
+                return item;
+            }).toList();
+            return ResponseEntity.ok(Map.of("mails", data));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "搜索邮件失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 下载附件
+     * GET /api/mail/download-attachment?id=xxx
+     */
+    @GetMapping("/download-attachment")
+    public ResponseEntity<?> downloadAttachment(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam("id") Long mailId) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        Mail mail = mailService.findById(mailId);
+        if (mail == null || !mail.getOwner().getId().equals(userId)) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "邮件未找到或无权访问"
+            ));
+        }
+
+        String attachmentPath = mail.getAttachmentPath();
+        if (attachmentPath == null || attachmentPath.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "该邮件没有附件可下载"
+            ));
+        }
+
+        try {
+            Path path = Paths.get(attachmentPath);
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "附件文件不存在"
+                ));
+            }
+
+            byte[] bytes = Files.readAllBytes(path);
+            String fileName = path.getFileName().toString();
+            String contentType = Files.probeContentType(path);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(new ByteArrayResource(bytes));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "附件下载失败: " + e.getMessage()
             ));
         }
     }

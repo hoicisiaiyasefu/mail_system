@@ -93,6 +93,12 @@ public class MailService {
         return mailRepository.findById(id).orElse(null);
     }
 
+    public List<Mail> searchByKeyword(Long userId, String keyword) {
+        MailUser owner = mailUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在: id=" + userId));
+        return mailRepository.searchByOwnerAndKeyword(owner, keyword);
+    }
+
     public Mail saveMail(Mail mail) {
         return mailRepository.save(mail);
     }
