@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -317,6 +318,82 @@ public class MailController {
                     content != null ? content : "",
                     cc != null ? cc : ""
             );
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "邮件发送失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 发送邮件（支持附件）- 需登录（JWT Token）
+     * POST /api/mail/send-with-attachment
+     *
+     * <p>Content-Type: multipart/form-data</p>
+     * <p>请求字段：to（必填）、subject（必填）、content、cc、file（可选，可传多个）</p>
+     */
+    @PostMapping("/send-with-attachment")
+    public ResponseEntity<Map<String, Object>> sendMailWithAttachment(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam("to") String to,
+            @RequestParam("subject") String subject,
+            @RequestParam(value = "content", defaultValue = "") String content,
+            @RequestParam(value = "cc", defaultValue = "") String cc,
+            @RequestParam(value = "file", required = false) List<MultipartFile> files) {
+
+        // 1. 校验 Token
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long senderUserId = JwtUtil.getUserIdFromToken(token);
+
+        if (to == null || to.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "收件人不能为空"
+            ));
+        }
+        if (subject == null || subject.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "邮件主题不能为空"
+            ));
+        }
+
+        try {
+            // 保存附件
+            List<String> attachmentPaths = new java.util.ArrayList<>();
+            if (files != null) {
+                for (MultipartFile file : files) {
+                    if (file != null && !file.isEmpty()) {
+                        String path = fileStorageService.saveFile(file);
+                        if (path != null) {
+                            attachmentPaths.add(path);
+                        }
+                    }
+                }
+            }
+
+            // 调用业务层发送
+            Map<String, Object> result = mailService.sendMail(
+                    senderUserId, to, subject, content, cc);
+
+            // 如果有附件，更新邮件记录
+            if (!attachmentPaths.isEmpty()) {
+                Long mailId = (Long) result.get("id");
+                Mail mail = mailService.findById(mailId);
+                if (mail != null) {
+                    mail.setAttachmentPath(String.join(",", attachmentPaths));
+                    mail.setHasAttachments(true);
+                    mailService.saveMail(mail);
+                    result.put("attachmentPath", mail.getAttachmentPath());
+                    result.put("hasAttachments", true);
+                }
+            }
+
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(

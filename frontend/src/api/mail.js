@@ -20,6 +20,13 @@ export function sendMail(to, subject, content, cc) {
   return api.post('/mail/send', { to, subject, content, cc })
 }
 
+/** 发送邮件（FormData 版，支持附件） */
+export function sendMailFormData(formData) {
+  return api.post('/mail/send-with-attachment', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
 /** 接收邮件（测试用） */
 export function receiveMail(from, to, subject, content) {
   return api.post('/mail/receive', { from, to, subject, content })
@@ -48,6 +55,11 @@ export function deleteMail(id) {
 /** 标记邮件为已读 */
 export function markAsRead(id) {
   return api.post('/mail/read', null, { params: { id } })
+}
+
+/** 获取未读邮件数量 */
+export function getUnreadCount() {
+  return api.get('/mail/unread-count')
 }
 
 /** 获取收件箱未读邮件数量（用于轮询新邮件通知） */

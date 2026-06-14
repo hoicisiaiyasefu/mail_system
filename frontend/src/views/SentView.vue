@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailList } from '@/api/mail'
+import { getMailList, deleteMail } from '@/api/mail'
 
 const router = useRouter()
 
@@ -13,6 +13,17 @@ const searchKeyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 搜索过滤后的邮件列表
+const filteredList = computed(() => {
+  const kw = searchKeyword.value.toLowerCase().trim()
+  if (!kw) return mailList.value
+  return mailList.value.filter(
+    (m) =>
+      (m.to || '').toLowerCase().includes(kw) ||
+      (m.subject || '').toLowerCase().includes(kw),
+  )
+})
 
 // 加载已发送列表（目前从收件箱中筛选 SENT 文件夹的邮件）
 async function loadSent() {
@@ -38,20 +49,38 @@ function handleRefresh() {
   ElMessage.success('刷新成功')
 }
 
-function handleDelete() {
+async function handleDelete() {
   if (selectedMails.value.length === 0) {
     ElMessage.warning('请先选择要删除的邮件')
     return
   }
-  ElMessageBox.confirm(`确定要删除选中的 ${selectedMails.value.length} 封邮件吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
-    selectedMails.value = []
-    ElMessage.success('删除成功（后端接口待完善）')
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedMails.value.length} 封邮件吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return
+  }
+
+  loading.value = true
+  const ids = selectedMails.value.map((m) => m.id)
+  let deletedCount = 0
+  for (const id of ids) {
+    try {
+      await deleteMail(id)
+      deletedCount++
+    } catch (err) {
+      ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+    }
+  }
+  selectedMails.value = []
+  if (deletedCount > 0) {
+    ElMessage.success(`已成功删除 ${deletedCount} 封邮件`)
     loadSent()
-  }).catch(() => {})
+  }
+  loading.value = false
 }
 
 function handleViewMail(row) {
@@ -94,7 +123,7 @@ function handleCompose() {
 
       <!-- 列表 -->
       <el-table
-        :data="mailList"
+        :data="filteredList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"

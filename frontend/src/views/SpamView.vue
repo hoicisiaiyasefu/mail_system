@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailList } from '@/api/mail'
+import { getMailList, deleteMail } from '@/api/mail'
 
 const router = useRouter()
 
@@ -13,6 +13,17 @@ const searchKeyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 搜索过滤后的邮件列表
+const filteredList = computed(() => {
+  const kw = searchKeyword.value.toLowerCase().trim()
+  if (!kw) return mailList.value
+  return mailList.value.filter(
+    (m) =>
+      (m.from || '').toLowerCase().includes(kw) ||
+      (m.subject || '').toLowerCase().includes(kw),
+  )
+})
 
 // 加载垃圾邮件列表（从收件箱中筛选 isSpam=true 的）
 async function loadSpam() {
@@ -119,7 +130,7 @@ function getScorePercent(score) {
 
       <!-- 列表 -->
       <el-table
-        :data="mailList"
+        :data="filteredList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"

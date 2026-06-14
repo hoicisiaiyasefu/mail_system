@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -69,7 +69,17 @@ onUnmounted(() => {
   }
 })
 
-const filteredList = ref(mailList)
+// 搜索过滤后的邮件列表
+const filteredList = computed(() => {
+  const kw = searchKeyword.value.toLowerCase().trim()
+  if (!kw) return mailList.value
+  return mailList.value.filter(
+    (m) =>
+      (m.from || '').toLowerCase().includes(kw) ||
+      (m.subject || '').toLowerCase().includes(kw) ||
+      (m.summary || '').toLowerCase().includes(kw),
+  )
+})
 
 function handleSelect(selection) {
   selectedMails.value = selection
@@ -176,7 +186,7 @@ function getPriorityColor(level) {
 
       <!-- 邮件列表 -->
       <el-table
-        :data="mailList"
+        :data="filteredList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"

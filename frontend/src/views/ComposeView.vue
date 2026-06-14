@@ -3,11 +3,12 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Promotion, EditPen, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { sendMail } from '@/api/mail'
+import { sendMailFormData } from '@/api/mail'
 
 const router = useRouter()
 
 const composeFormRef = ref(null)
+const uploadRef = ref(null)
 
 const composeForm = reactive({
   to: '',
@@ -15,6 +16,9 @@ const composeForm = reactive({
   subject: '',
   body: '',
 })
+
+// 附件列表（存储用户选择的文件）
+const fileList = ref([])
 
 const rules = {
   to: [
@@ -34,7 +38,20 @@ async function handleSend() {
 
   sending.value = true
   try {
-    const res = await sendMail(composeForm.to, composeForm.subject, composeForm.body, composeForm.cc)
+    // 用 FormData 打包文字和文件
+    const formData = new FormData()
+    formData.append('to', composeForm.to)
+    formData.append('subject', composeForm.subject)
+    formData.append('content', composeForm.body)
+    if (composeForm.cc) {
+      formData.append('cc', composeForm.cc)
+    }
+    // 添加附件
+    fileList.value.forEach((file) => {
+      formData.append('file', file.raw || file)
+    })
+
+    const res = await sendMailFormData(formData)
     const data = res.data
     if (data.error) {
       ElMessage.error(data.error)
@@ -52,6 +69,11 @@ async function handleSend() {
 
 function handleDraft() {
   ElMessage.success('已保存到草稿箱（后续开发）')
+}
+
+/** el-upload 文件变化时更新 fileList */
+function handleFileChange(uploadFile) {
+  fileList.value = uploadFile
 }
 </script>
 
@@ -91,10 +113,13 @@ function handleDraft() {
 
         <el-form-item label="附件">
           <el-upload
+            ref="uploadRef"
+            v-model:file-list="fileList"
             action="#"
             :auto-upload="false"
             :limit="3"
             :on-exceed="() => ElMessage.warning('最多上传 3 个附件')"
+            @change="handleFileChange"
           >
             <el-button type="primary" plain>
               <el-icon><UploadFilled /></el-icon> 添加附件

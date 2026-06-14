@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -14,6 +14,17 @@ const selectedMails = ref([])
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 搜索过滤后的草稿列表
+const filteredList = computed(() => {
+  const kw = searchKeyword.value.toLowerCase().trim()
+  if (!kw) return mailList.value
+  return mailList.value.filter(
+    (m) =>
+      (m.to || '').toLowerCase().includes(kw) ||
+      (m.subject || '').toLowerCase().includes(kw),
+  )
+})
 
 function handleSelect(selection) {
   selectedMails.value = selection
@@ -82,7 +93,7 @@ function handleRefresh() {
 
       <!-- 列表 -->
       <el-table
-        :data="mailList"
+        :data="filteredList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleEditDraft"
