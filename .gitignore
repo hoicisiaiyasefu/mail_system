@@ -79,4 +79,9 @@ files/
 # 密钥/配置（严禁上传）
 secret/
 keys/
+
+# Postman 文件（个人测试用，不上传）
 .postman/
+*.postman_collection.json
+*.postman_environment.json
+postman/
