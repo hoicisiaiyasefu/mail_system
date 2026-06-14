@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getInboxList } from '@/api/mail'
+import { getInboxList, deleteMail, getUnreadCount } from '@/api/mail'
 
 const router = useRouter()
 
@@ -14,6 +14,11 @@ const loading = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 未读邮件通知
+const unreadCount = ref(0)
+const showNewMailTip = ref(false)
+let pollingTimer = null
 
 // 加载收件箱数据
 async function loadInbox() {
@@ -33,7 +38,36 @@ async function loadInbox() {
   }
 }
 
-onMounted(loadInbox)
+// 轮询未读邮件数量（每10秒）
+async function pollUnreadCount() {
+  try {
+    const res = await getUnreadCount()
+    const newCount = res.data.unreadCount || 0
+    if (newCount > unreadCount.value) {
+      showNewMailTip.value = true
+    }
+    unreadCount.value = newCount
+  } catch (_) {
+    // 静默失败，不影响页面使用
+  }
+}
+
+function dismissTip() {
+  showNewMailTip.value = false
+}
+
+onMounted(() => {
+  loadInbox()
+  pollUnreadCount()
+  pollingTimer = setInterval(pollUnreadCount, 10000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+})
 
 const filteredList = ref(mailList)
 
@@ -43,22 +77,44 @@ function handleSelect(selection) {
 
 function handleRefresh() {
   loadInbox()
+  pollUnreadCount()
+  showNewMailTip.value = false
   ElMessage.success('刷新成功')
 }
 
-function handleDelete() {
+async function handleDelete() {
   if (selectedMails.value.length === 0) {
     ElMessage.warning('请先选择要删除的邮件')
     return
   }
-  ElMessageBox.confirm(`确定要删除选中的 ${selectedMails.value.length} 封邮件吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
-    selectedMails.value = []
-    ElMessage.success('删除成功（后端接口待完善）')
-  }).catch(() => {})
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedMails.value.length} 封邮件吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  loading.value = true
+  const ids = selectedMails.value.map((m) => m.id)
+  let deletedCount = 0
+  for (const id of ids) {
+    try {
+      await deleteMail(id)
+      deletedCount++
+    } catch (err) {
+      ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+    }
+  }
+  selectedMails.value = []
+  if (deletedCount > 0) {
+    ElMessage.success(`已成功删除 ${deletedCount} 封邮件`)
+    loadInbox()
+    pollUnreadCount()
+  }
+  loading.value = false
 }
 
 function handleViewMail(row) {
@@ -82,6 +138,13 @@ function getPriorityColor(level) {
 
 <template>
   <div>
+    <!-- 新邮件通知横幅 -->
+    <div v-if="showNewMailTip" class="new-mail-banner" @click="dismissTip">
+      <span>📬 {{ unreadCount > 0 ? `您有 ${unreadCount} 封未读邮件，点击刷新查看` : '检查新邮件中...' }}</span>
+      <el-button size="small" text style="color: #fff" @click.stop="handleRefresh">刷新</el-button>
+      <span style="cursor: pointer; margin-left: 8px; opacity: 0.8" @click.stop="dismissTip">✕</span>
+    </div>
+
     <!-- 工具栏 -->
     <div class="mail-list-card">
       <div class="mail-toolbar">
@@ -188,6 +251,24 @@ function getPriorityColor(level) {
 </template>
 
 <style scoped>
+.new-mail-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 20px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #409eff, #337ecc);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 :deep(.unread-row) {
   background-color: #f0f7ff;
 }

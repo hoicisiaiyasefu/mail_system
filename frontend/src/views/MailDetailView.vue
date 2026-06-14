@@ -6,7 +6,7 @@ import {
   Paperclip, Document, Download, Back,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailDetail, generateSummary, getAiReport } from '@/api/mail'
+import { getMailDetail, generateSummary, getAiReport, deleteMail, markAsRead } from '@/api/mail'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,12 +16,18 @@ const mail = ref(null)
 const loading = ref(true)
 const summaryLoading = ref(false)
 
-// 加载邮件详情
+// 加载邮件详情（并自动标记已读）
 async function loadMail() {
   loading.value = true
   try {
     const res = await getMailDetail(mailId.value)
     mail.value = res.data
+    // 如果邮件未读，自动标记为已读
+    if (mail.value && !mail.value.readFlag) {
+      markAsRead(mailId.value).then(() => {
+        mail.value.readFlag = true
+      }).catch(() => {})
+    }
   } catch (err) {
     ElMessage.error('加载邮件失败')
     mail.value = null
@@ -58,15 +64,23 @@ function handleReply() {
   ElMessage.info('已跳转到写信页')
 }
 
-function handleDelete() {
-  ElMessageBox.confirm('确定要删除这封邮件吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
+async function handleDelete() {
+  try {
+    await ElMessageBox.confirm('确定要删除这封邮件吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  try {
+    await deleteMail(mailId.value)
     ElMessage.success('已删除')
     router.push('/inbox')
-  }).catch(() => {})
+  } catch (err) {
+    ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+  }
 }
 
 function handleReportSpam() {

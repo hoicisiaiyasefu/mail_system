@@ -192,6 +192,64 @@ public class MailService {
     }
 
     // ============================================================
+    // B模块（基础功能扩展）：删除、标记已读、未读通知
+    // ============================================================
+
+    /**
+     * 软删除邮件 — 标记 deletedFlag，移到 TRASH 文件夹
+     *
+     * @param mailId 邮件ID
+     * @param userId 当前登录用户ID（用于校验所有权）
+     */
+    @Transactional
+    public void softDelete(Long mailId, Long userId) {
+        Mail mail = mailRepository.findById(mailId)
+                .orElseThrow(() -> new RuntimeException("邮件不存在: id=" + mailId));
+
+        if (!mail.getOwner().getId().equals(userId)) {
+            throw new RuntimeException("无权操作该邮件");
+        }
+
+        mail.setDeletedFlag(true);
+        mail.setFolder(Mail.MailFolder.TRASH);
+        mailRepository.save(mail);
+        log.info("邮件已删除: id={}, subject={}", mailId, mail.getSubject());
+    }
+
+    /**
+     * 标记邮件为已读
+     *
+     * @param mailId 邮件ID
+     * @param userId 当前登录用户ID（用于校验所有权）
+     */
+    @Transactional
+    public void markAsRead(Long mailId, Long userId) {
+        Mail mail = mailRepository.findById(mailId)
+                .orElseThrow(() -> new RuntimeException("邮件不存在: id=" + mailId));
+
+        if (!mail.getOwner().getId().equals(userId)) {
+            throw new RuntimeException("无权操作该邮件");
+        }
+
+        mail.setReadFlag(true);
+        mailRepository.save(mail);
+        log.info("邮件已标记为已读: id={}", mailId);
+    }
+
+    /**
+     * 获取收件箱未读邮件数量
+     *
+     * @param userId 当前登录用户ID
+     * @return 未读邮件数
+     */
+    public long getUnreadCount(Long userId) {
+        MailUser owner = mailUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在: id=" + userId));
+        return mailRepository.countByOwnerAndFolderAndReadFlagFalseAndDeletedFlagFalse(
+                owner, Mail.MailFolder.INBOX);
+    }
+
+    // ============================================================
     // 私有辅助方法
     // ============================================================
 

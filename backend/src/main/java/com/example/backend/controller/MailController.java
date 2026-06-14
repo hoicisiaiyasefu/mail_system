@@ -93,6 +93,7 @@ public class MailController {
         resp.put("spamScore", mail.getSpamScore());
         resp.put("folder", mail.getFolder().name());
         resp.put("status", mail.getStatus().name());
+        resp.put("readFlag", mail.getReadFlag());
         resp.put("receivedAt", mail.getReceivedAt() != null ? mail.getReceivedAt().toString() : null);
         // AI 分析字段
         resp.put("riskLevel", mail.getRiskLevel());
@@ -325,6 +326,116 @@ public class MailController {
     }
 
     // ============================================================
+    // B模块（基础功能扩展）：删除、标记已读、未读通知
+    // ============================================================
+
+    /**
+     * 删除邮件（软删除，移到 TRASH）
+     * DELETE /api/mail/delete?id=xxx
+     * <p>需要登录（JWT Token）</p>
+     */
+    @DeleteMapping("/delete")
+    public ResponseEntity<Map<String, Object>> deleteMail(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam("id") Long mailId) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        try {
+            mailService.softDelete(mailId, userId);
+            return ResponseEntity.ok(Map.of(
+                    "id", mailId,
+                    "status", "DELETED",
+                    "message", "邮件已删除"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "删除失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 标记邮件为已读
+     * POST /api/mail/read?id=xxx
+     * <p>需要登录（JWT Token）</p>
+     */
+    @PostMapping("/read")
+    public ResponseEntity<Map<String, Object>> markAsRead(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam("id") Long mailId) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        try {
+            mailService.markAsRead(mailId, userId);
+            return ResponseEntity.ok(Map.of(
+                    "id", mailId,
+                    "status", "READ",
+                    "message", "已标记为已读"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "标记已读失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 获取收件箱未读邮件数量（前端每 10 秒轮询一次，用于新邮件通知）
+     * GET /api/mail/unread-count
+     * <p>需要登录（JWT Token）</p>
+     *
+     * <p>成功响应：</p>
+     * <pre>{@code
+     * {
+     *   "unreadCount": 3,
+     *   "hasNew": true,
+     *   "message": "您有 3 封未读邮件"
+     * }
+     * }</pre>
+     */
+    @GetMapping("/unread-count")
+    public ResponseEntity<Map<String, Object>> getUnreadCount(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !JwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        try {
+            long count = mailService.getUnreadCount(userId);
+            return ResponseEntity.ok(Map.of(
+                    "unreadCount", count,
+                    "hasNew", count > 0,
+                    "message", count > 0
+                            ? "您有 " + count + " 封未读邮件"
+                            : "没有新邮件"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "查询失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    // ============================================================
     // 私有辅助方法
     // ============================================================
 
@@ -398,6 +509,7 @@ public class MailController {
                 item.put("attachmentPath", mail.getAttachmentPath());
                 item.put("folder", mail.getFolder().name());
                 item.put("status", mail.getStatus().name());
+                item.put("readFlag", mail.getReadFlag());
                 // AI 分析字段（列表视图精简）
                 item.put("priorityLevel", mail.getPriorityLevel());
                 item.put("riskLevel", mail.getRiskLevel());

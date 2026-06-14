@@ -39,3 +39,18 @@ export function getAiReport(id) {
 export function recheckSpam(id) {
   return api.post(`/mail/${id}/recheck-spam`)
 }
+
+/** 删除邮件（软删除） */
+export function deleteMail(id) {
+  return api.delete('/mail/delete', { params: { id } })
+}
+
+/** 标记邮件为已读 */
+export function markAsRead(id) {
+  return api.post('/mail/read', null, { params: { id } })
+}
+
+/** 获取收件箱未读邮件数量（用于轮询新邮件通知） */
+export function getUnreadCount() {
+  return api.get('/mail/unread-count')
+}
