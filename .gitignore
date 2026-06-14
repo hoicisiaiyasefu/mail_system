@@ -79,3 +79,4 @@ files/
 # 密钥/配置（严禁上传）
 secret/
 keys/
+.postman/
