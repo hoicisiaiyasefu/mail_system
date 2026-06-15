@@ -304,7 +304,7 @@ class RuleEngine:
         '系统检测', '异地登录', '风险',
         # 其他垃圾特征
         '微信号', '微信', 'QQ', '加群', '入群', '刷单', '打字员',
-        '包过', '代写', '论文', '代考', '替考',
+        '包过', '代写论文', '代考', '替考',
         '包下卡', '无前期', '信用卡', '储蓄卡',
     ]
 
@@ -313,6 +313,13 @@ class RuleEngine:
         r'https?://\d+\.\d+\.\d+\.\d+',  # IP 地址 URL
         r'https?://.*\.(tk|ml|ga|cf|gq)\b',  # 免费域名
         r'https?://.*\.(xyz|top|win|vip)\b',  # 廉价域名
+    ]
+
+    # 教育/机构/高校 URL 白名单（不会被当作可疑 URL）
+    ACADEMIC_URL_WHITELIST = [
+        '.edu', '.edu.cn', '.ac.cn', '.ac.uk', '.gov.cn',
+        'cqvip.com', 'cnki.net', 'wanfangdata.com',  # 学术论文平台
+        'scut.edu', 'scut',  # 华南理工大学
     ]
 
     # 垃圾邮件特征正则（额外检测模式）
@@ -371,14 +378,29 @@ class RuleEngine:
                 pattern_score += min(len(matches) * weight, 0.5)
         features['pattern_score'] = min(pattern_score, 1.0)
 
-        # URL 数量
+        # URL 数量（排除教育/机构白名单域名）
         urls = re.findall(r'https?://\S+', content_lower)
-        features['url_count'] = len(urls)
+        whitelisted_urls = 0
+        for url in urls:
+            for domain in cls.ACADEMIC_URL_WHITELIST:
+                if domain.lower() in url.lower():
+                    whitelisted_urls += 1
+                    break
+        features['url_count'] = len(urls) - whitelisted_urls  # 扣掉白名单URL
+        features['whitelisted_url_count'] = whitelisted_urls
 
         # 可疑 URL 数量
         suspicious_urls = 0
         for pattern in cls.SUSPICIOUS_URL_PATTERNS:
-            suspicious_urls += len(re.findall(pattern, content_lower))
+            found_urls = re.findall(pattern, content_lower)
+            for url in found_urls:
+                is_whitelisted = False
+                for domain in cls.ACADEMIC_URL_WHITELIST:
+                    if domain.lower() in url.lower():
+                        is_whitelisted = True
+                        break
+                if not is_whitelisted:
+                    suspicious_urls += 1
         features['suspicious_url_count'] = suspicious_urls
 
         # 全大写单词占比
@@ -573,15 +595,15 @@ class MLSpamDetector(EmailPluginBase):
             combined_score = rule_spam_score
             confidence = 0.5
 
-        # 降低阈值：0.3 即可判定为垃圾邮件（原先 0.6 过于保守）
-        is_spam = combined_score > 0.3
+        # 阈值调整为 0.50（0.30 过于激进，大量误判正常邮件为垃圾）
+        is_spam = combined_score > 0.50
 
         # 生成人类可读的结果描述
-        if combined_score > 0.8:
+        if combined_score > 0.80:
             result = "高度疑似垃圾邮件"
-        elif combined_score > 0.5:
+        elif combined_score > 0.65:
             result = "可能为垃圾邮件"
-        elif combined_score > 0.3:
+        elif combined_score > 0.50:
             result = "可能为正常邮件"
         else:
             result = "正常邮件"

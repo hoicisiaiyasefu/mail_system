@@ -5,6 +5,7 @@ import com.example.backend.repository.MailUserRepository;
 import com.example.backend.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,17 +18,23 @@ import java.util.Optional;
 
 /**
  * 用户业务服务 — 注册、登录、密码加密
+ * <p>密码使用 BCrypt 加密，兼容旧的 SHA-256 密码（自动升级）</p>
  */
 @Service
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    /** @deprecated 仅用于兼容旧密码，新密码使用 BCrypt */
+    @Deprecated
     private static final String PASSWORD_SALT = "mail-system-salt-2026";
 
     private final MailUserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserService(MailUserRepository userRepository) {
+    public UserService(MailUserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     // ============================================================
@@ -56,7 +63,7 @@ public class UserService {
         MailUser user = new MailUser();
         user.setUsername(username);
         user.setEmailAddress(email);
-        user.setPasswordHash(hashPassword(password));
+        user.setPasswordHash(passwordEncoder.encode(password));
         user.setNickname(username);          // 默认昵称 = 用户名
         user.setStatus(MailUser.UserStatus.ACTIVE);
 
@@ -79,6 +86,7 @@ public class UserService {
 
     /**
      * 用户登录 — 校验密码，返回 JWT Token
+     * <p>兼容旧 SHA-256 密码，登录时自动升级为 BCrypt</p>
      *
      * @param username 用户名
      * @param password 明文密码
@@ -93,8 +101,22 @@ public class UserService {
 
         MailUser user = optUser.get();
 
-        // 校验密码
-        if (!verifyPassword(password, user.getPasswordHash())) {
+        // 校验密码（优先 BCrypt，兼容旧 SHA-256）
+        boolean passwordOk = false;
+        String storedHash = user.getPasswordHash();
+        if (storedHash != null && storedHash.startsWith("$2a$")) {
+            // BCrypt 格式
+            passwordOk = passwordEncoder.matches(password, storedHash);
+        } else {
+            // 旧 SHA-256 格式 — 兼容校验后自动升级
+            passwordOk = verifyLegacyPassword(password, storedHash);
+            if (passwordOk) {
+                user.setPasswordHash(passwordEncoder.encode(password));
+                log.info("用户 {} 密码已从 SHA-256 自动升级为 BCrypt", username);
+            }
+        }
+
+        if (!passwordOk) {
             return Map.of("error", "用户名或密码错误");
         }
 
@@ -108,7 +130,7 @@ public class UserService {
         userRepository.save(user);
 
         // 生成 JWT Token
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
         log.info("用户登录成功: id={}, username={}", user.getId(), username);
 
         return Map.of(
@@ -123,28 +145,81 @@ public class UserService {
     }
 
     // ============================================================
-    // 密码加密（SHA-256 + 固定盐值）
+    // 用户设置
     // ============================================================
 
-    /**
-     * 对明文密码做 SHA-256 哈希
-     */
-    private String hashPassword(String password) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            String salted = password + PASSWORD_SALT;
-            byte[] hash = md.digest(salted.getBytes(StandardCharsets.UTF_8));
-            return bytesToHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("密码加密算法不可用", e);
+    public Map<String, Object> getProfile(Long userId) {
+        MailUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        return Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "email", user.getEmailAddress(),
+                "nickname", user.getNickname() != null ? user.getNickname() : user.getUsername(),
+                "signature", user.getSignature() != null ? user.getSignature() : ""
+        );
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, String nickname) {
+        MailUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        if (nickname != null && !nickname.isBlank()) {
+            user.setNickname(nickname);
+            userRepository.save(user);
+            log.info("用户 {} 昵称已更新", user.getUsername());
         }
     }
 
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        MailUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        // 验证旧密码
+        boolean oldOk = false;
+        String storedHash = user.getPasswordHash();
+        if (storedHash != null && storedHash.startsWith("$2a$")) {
+            oldOk = passwordEncoder.matches(oldPassword, storedHash);
+        } else {
+            oldOk = verifyLegacyPassword(oldPassword, storedHash);
+        }
+        if (!oldOk) {
+            throw new RuntimeException("旧密码不正确");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("用户 {} 密码已修改", user.getUsername());
+    }
+
+    @Transactional
+    public void updateSignature(Long userId, String signature) {
+        MailUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        user.setSignature(signature);
+        userRepository.save(user);
+        log.info("用户 {} 签名已更新", user.getUsername());
+    }
+
+    // ============================================================
+    // 密码加密（BCrypt，兼容旧 SHA-256）
+    // ============================================================
+
     /**
-     * 校验明文密码是否与存储的哈希值匹配
+     * 旧版 SHA-256 哈希校验（仅用于兼容已存在的密码）
+     * @deprecated 仅兼容迁移用，新密码统一使用 BCrypt
      */
-    private boolean verifyPassword(String rawPassword, String storedHash) {
-        return hashPassword(rawPassword).equals(storedHash);
+    @Deprecated
+    private boolean verifyLegacyPassword(String rawPassword, String storedHash) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String salted = rawPassword + PASSWORD_SALT;
+            byte[] hash = md.digest(salted.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(hash).equals(storedHash);
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
     }
 
     private String bytesToHex(byte[] bytes) {

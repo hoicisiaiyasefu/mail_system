@@ -1,6 +1,8 @@
 package com.example.backend.controller;
 
+import com.example.backend.annotation.RateLimit;
 import com.example.backend.service.UserService;
+import com.example.backend.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +19,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -43,6 +47,7 @@ public class UserController {
      * }
      * }</pre>
      */
+    @RateLimit(permitsPerSecond = 3)
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, Object> body) {
         String username = (String) body.get("username");
@@ -92,6 +97,7 @@ public class UserController {
      * }
      * }</pre>
      */
+    @RateLimit(permitsPerSecond = 5)
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, Object> body) {
         String username = (String) body.get("username");
@@ -109,5 +115,133 @@ public class UserController {
             return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result);
+    }
+
+    // ============================================================
+    // 用户设置
+    // ============================================================
+
+    /**
+     * 获取用户资料
+     * GET /api/user/profile
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<Map<String, Object>> getProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = jwtUtil.getUserIdFromToken(token);
+        Map<String, Object> profile = userService.getProfile(userId);
+        return ResponseEntity.ok(profile);
+    }
+
+    /**
+     * 修改昵称
+     * PUT /api/user/profile
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, Object> body) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = jwtUtil.getUserIdFromToken(token);
+        String nickname = (String) body.get("nickname");
+        try {
+            userService.updateProfile(userId, nickname);
+            return ResponseEntity.ok(Map.of("message", "资料已更新"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "更新失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 修改密码
+     * PUT /api/user/password
+     */
+    @PutMapping("/password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, Object> body) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = jwtUtil.getUserIdFromToken(token);
+        String oldPassword = (String) body.get("oldPassword");
+        String newPassword = (String) body.get("newPassword");
+
+        if (oldPassword == null || oldPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "旧密码和新密码不能为空"
+            ));
+        }
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "新密码长度不能少于 6 位"
+            ));
+        }
+
+        try {
+            userService.changePassword(userId, oldPassword, newPassword);
+            return ResponseEntity.ok(Map.of("message", "密码已修改"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 修改邮件签名
+     * PUT /api/user/signature
+     */
+    @PutMapping("/signature")
+    public ResponseEntity<Map<String, Object>> updateSignature(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, Object> body) {
+
+        String token = extractBearerToken(authHeader);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "未登录或 Token 已过期，请重新登录"
+            ));
+        }
+
+        Long userId = jwtUtil.getUserIdFromToken(token);
+        String signature = (String) body.get("signature");
+        try {
+            userService.updateSignature(userId, signature);
+            return ResponseEntity.ok(Map.of("message", "签名已更新"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "更新失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    private String extractBearerToken(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }

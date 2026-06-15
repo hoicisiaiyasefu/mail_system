@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getInboxList, deleteMail, getUnreadCount } from '@/api/mail'
+import { getInboxList, deleteMail, getUnreadCount, searchMail, batchDelete, batchMarkAsRead, toggleStar } from '@/api/mail'
 
 const router = useRouter()
 
@@ -13,30 +13,85 @@ const searchKeyword = ref('')
 const loading = ref(false)
 
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
+const totalElements = ref(0)
 
 // 未读邮件通知
 const unreadCount = ref(0)
 const showNewMailTip = ref(false)
 let pollingTimer = null
 
-// 加载收件箱数据
+// 加载收件箱数据（服务端分页）
 async function loadInbox() {
   loading.value = true
   try {
-    const res = await getInboxList()
-    mailList.value = (res.data.mails || []).map((m) => ({
+    const res = await getInboxList(currentPage.value - 1, pageSize.value)
+    const data = res.data
+    mailList.value = (data.mails || []).map((m) => ({
       ...m,
       preview: (m.summary || m.subject || '').substring(0, 80),
       date: m.receivedAt || '',
-      isRead: m.readFlag !== undefined ? m.readFlag : true,
+      isRead: m.readFlag !== undefined ? m.readFlag : false,
     }))
+    totalElements.value = data.totalElements || 0
   } catch (err) {
     ElMessage.error('加载收件箱失败：' + (err.response?.data?.error || err.message))
   } finally {
     loading.value = false
   }
 }
+
+// 后端搜索（分页）
+async function performSearch() {
+  const kw = searchKeyword.value.trim()
+  if (!kw) {
+    loadInbox()
+    return
+  }
+  loading.value = true
+  try {
+    const res = await searchMail(kw, currentPage.value - 1, pageSize.value)
+    const data = res.data
+    mailList.value = (data.mails || []).map((m) => ({
+      ...m,
+      preview: (m.summary || m.subject || '').substring(0, 80),
+      date: m.receivedAt || '',
+      isRead: m.readFlag !== undefined ? m.readFlag : false,
+    }))
+    totalElements.value = data.totalElements || 0
+  } catch (err) {
+    ElMessage.error('搜索失败：' + (err.response?.data?.error || err.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+// 防抖搜索
+let searchTimer = null
+function onSearchInput() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    currentPage.value = 1
+    performSearch()
+  }, 400)
+}
+
+// 监听分页变化
+watch(currentPage, () => {
+  if (searchKeyword.value.trim()) {
+    performSearch()
+  } else {
+    loadInbox()
+  }
+})
+watch(pageSize, () => {
+  currentPage.value = 1
+  if (searchKeyword.value.trim()) {
+    performSearch()
+  } else {
+    loadInbox()
+  }
+})
 
 // 轮询未读邮件数量（每10秒）
 async function pollUnreadCount() {
@@ -48,7 +103,7 @@ async function pollUnreadCount() {
     }
     unreadCount.value = newCount
   } catch (_) {
-    // 静默失败，不影响页面使用
+    // 静默失败
   }
 }
 
@@ -67,18 +122,7 @@ onUnmounted(() => {
     clearInterval(pollingTimer)
     pollingTimer = null
   }
-})
-
-// 搜索过滤后的邮件列表
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.toLowerCase().trim()
-  if (!kw) return mailList.value
-  return mailList.value.filter(
-    (m) =>
-      (m.from || '').toLowerCase().includes(kw) ||
-      (m.subject || '').toLowerCase().includes(kw) ||
-      (m.summary || '').toLowerCase().includes(kw),
-  )
+  if (searchTimer) clearTimeout(searchTimer)
 })
 
 function handleSelect(selection) {
@@ -86,10 +130,29 @@ function handleSelect(selection) {
 }
 
 function handleRefresh() {
+  currentPage.value = 1
+  searchKeyword.value = ''
   loadInbox()
   pollUnreadCount()
   showNewMailTip.value = false
   ElMessage.success('刷新成功')
+}
+
+async function handleBatchMarkRead() {
+  if (selectedMails.value.length === 0) {
+    ElMessage.warning('请先选择要标记的邮件')
+    return
+  }
+  const ids = selectedMails.value.map((m) => m.id)
+  try {
+    const res = await batchMarkAsRead(ids)
+    ElMessage.success(res.data.message || `已标记 ${res.data.count} 封邮件为已读`)
+    selectedMails.value = []
+    loadInbox()
+    pollUnreadCount()
+  } catch (err) {
+    ElMessage.error('标记失败：' + (err.response?.data?.error || err.message))
+  }
 }
 
 async function handleDelete() {
@@ -109,22 +172,28 @@ async function handleDelete() {
 
   loading.value = true
   const ids = selectedMails.value.map((m) => m.id)
-  let deletedCount = 0
-  for (const id of ids) {
-    try {
-      await deleteMail(id)
-      deletedCount++
-    } catch (err) {
-      ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+  try {
+    const res = await batchDelete(ids)
+    if (res.data.count > 0) {
+      ElMessage.success(`已成功删除 ${res.data.count} 封邮件`)
+      selectedMails.value = []
+      loadInbox()
+      pollUnreadCount()
     }
-  }
-  selectedMails.value = []
-  if (deletedCount > 0) {
-    ElMessage.success(`已成功删除 ${deletedCount} 封邮件`)
-    loadInbox()
-    pollUnreadCount()
+  } catch (err) {
+    ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
   }
   loading.value = false
+}
+
+async function handleToggleStar(row) {
+  try {
+    await toggleStar(row.id)
+    row.starred = !row.starred
+    ElMessage.success(row.starred ? '已标星' : '已取消标星')
+  } catch (err) {
+    ElMessage.error('操作失败')
+  }
 }
 
 function handleViewMail(row) {
@@ -139,7 +208,6 @@ function tableRowClassName({ row }) {
   return row.isRead ? '' : 'unread-row'
 }
 
-// AI标签颜色
 function getPriorityColor(level) {
   const map = { critical: '#f56c6c', high: '#e6a23c', normal: '#909399', low: '#c0c4cc' }
   return map[level] || '#909399'
@@ -166,6 +234,13 @@ function getPriorityColor(level) {
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
           <el-button
+            type="warning"
+            :disabled="selectedMails.length === 0"
+            @click="handleBatchMarkRead"
+          >
+            标记已读
+          </el-button>
+          <el-button
             type="danger"
             :disabled="selectedMails.length === 0"
             @click="handleDelete"
@@ -180,13 +255,15 @@ function getPriorityColor(level) {
             :prefix-icon="Search"
             style="width: 260px"
             clearable
+            @input="onSearchInput"
+            @clear="handleRefresh"
           />
         </div>
       </div>
 
       <!-- 邮件列表 -->
       <el-table
-        :data="filteredList"
+        :data="mailList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"
@@ -196,6 +273,14 @@ function getPriorityColor(level) {
         v-loading="loading"
       >
         <el-table-column type="selection" width="45" />
+        <el-table-column label="" width="40" align="center">
+          <template #default="{ row }">
+            <span
+              :style="{ cursor: 'pointer', color: row.starred ? '#e6a23c' : '#c0c4cc', fontSize: '16px' }"
+              @click.stop="handleToggleStar(row)"
+            >{{ row.starred ? '⭐' : '☆' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="" width="70">
           <template #default="{ row }">
             <div style="display: flex; gap: 4px; align-items: center">
@@ -245,12 +330,12 @@ function getPriorityColor(level) {
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
+      <!-- 分页（服务端） -->
       <div style="display: flex; justify-content: flex-end; padding: 12px 16px">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :total="mailList.length"
+          :total="totalElements"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
           small

@@ -1,10 +1,10 @@
 {
   "llm": {
     "enabled": true,
-    "api_key": "sk-9YJuAZV8YA4ZjfKKqnggtNRxUTvT6bXEQrYWKT188TyVnTN8",
+    "api_key": "sk-0a395697cc454534b81261a3e9df4a96",
     "provider": "openai",
     "model": "deepseek-v4-pro",
-    "base_url": "https://www.micuapi.ai/v1"
+    "base_url": "https://api.deepseek.com"
   },
   "plugins": {
     "email_priority_plugin": {

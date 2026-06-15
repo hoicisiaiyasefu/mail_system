@@ -152,9 +152,9 @@ def main():
         if ml_is_spam and llm_is_spam:
             combined_score = min(combined_score * 1.2, 1.0)
             final_is_spam = True
-        # 如果只有一方认为是垃圾邮件，取加权平均
+        # 如果只有一方认为是垃圾邮件，需要更高阈值（避免单方误判）
         elif ml_is_spam or llm_is_spam:
-            final_is_spam = combined_score > 0.35
+            final_is_spam = combined_score > 0.55
         else:
             final_is_spam = False
 

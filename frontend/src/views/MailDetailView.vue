@@ -2,11 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeft, Delete, WarningFilled,
-  Paperclip, Document, Download, Back,
+  ArrowLeft, ArrowDown, Delete, WarningFilled,
+  Paperclip, Document, Download, Back, Star, StarFilled, Box, FolderOpened,
 } from '@element-plus/icons-vue'
+import DOMPurify from 'dompurify'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailDetail, generateSummary, getAiReport, deleteMail, markAsRead } from '@/api/mail'
+import { getMailDetail, generateSummary, getAiReport, deleteMail, markAsRead, downloadAttachment, toggleStar, archiveMail, moveToFolder, toggleRead } from '@/api/mail'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +16,78 @@ const mailId = computed(() => Number(route.params.id))
 const mail = ref(null)
 const loading = ref(true)
 const summaryLoading = ref(false)
+
+// 安全渲染 HTML 正文（XSS 防护）
+const safeContent = computed(() => {
+  if (!mail.value?.content) return ''
+  // 如果内容是 HTML，用 DOMPurify 净化；否则按纯文本处理
+  const raw = mail.value.content
+  if (raw.trim().startsWith('<')) {
+    return DOMPurify.sanitize(raw)
+  }
+  // 纯文本：转义 HTML 后保留换行
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
+})
+
+// 解析附件列表
+const attachments = computed(() => {
+  if (!mail.value?.hasAttachments || !mail.value?.attachmentPath) return []
+  const paths = mail.value.attachmentPath.split(',')
+  return paths.map((p) => {
+    const rawName = p.split('/').pop().split('\\').pop()  // 兼容 Win/Linux 路径
+    // 去掉 UUID 前缀（格式: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx_原始文件名）
+    const cleanName = rawName.replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/, '')
+    const ext = cleanName.split('.').pop().toLowerCase()
+    return {
+      name: cleanName,
+      path: p.trim(),
+      ext,
+      isImage: ['jpg','jpeg','png','gif','webp','bmp'].includes(ext),
+      isPdf: ext === 'pdf',
+      isDoc: ['doc','docx'].includes(ext),
+    }
+  })
+})
+
+// 下载附件（带 JWT 认证）
+async function handleDownload() {
+  try {
+    const res = await downloadAttachment(mailId.value)
+    // 优先从 Content-Disposition 头提取文件名
+    const disposition = res.headers['content-disposition']
+    let fileName = ''
+    if (disposition) {
+      // 尝试匹配 filename*=UTF-8''xxx 或 filename="xxx"
+      const matchStar = disposition.match(/filename\*=UTF-8''([^;]+)/)
+      const matchNormal = disposition.match(/filename="?([^";\n]+)"?/)
+      if (matchStar) {
+        fileName = decodeURIComponent(matchStar[1])
+      } else if (matchNormal) {
+        fileName = decodeURIComponent(matchNormal[1])
+      }
+    }
+    // 回退：使用 attachments 中解析的文件名
+    if (!fileName && attachments.value.length > 0) {
+      fileName = attachments.value[0].name
+    }
+    if (!fileName) fileName = 'attachment'
+    // 创建 Blob 下载链接
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    ElMessage.error('附件下载失败')
+  }
+}
 
 // 加载邮件详情（并自动标记已读）
 async function loadMail() {
@@ -60,8 +133,31 @@ function goBack() {
 }
 
 function handleReply() {
-  router.push('/compose')
-  ElMessage.info('已跳转到写信页')
+  if (!mail.value) return
+  router.push({
+    path: '/compose',
+    query: {
+      replyTo: mail.value.id,
+      from: mail.value.from,
+      subject: mail.value.subject,
+      content: mail.value.content,
+      date: mail.value.receivedAt || '',
+    },
+  })
+}
+
+function handleForward() {
+  if (!mail.value) return
+  router.push({
+    path: '/compose',
+    query: {
+      forward: mail.value.id,
+      from: mail.value.from,
+      subject: mail.value.subject,
+      content: mail.value.content,
+      date: mail.value.receivedAt || '',
+    },
+  })
 }
 
 async function handleDelete() {
@@ -85,6 +181,66 @@ async function handleDelete() {
 
 function handleReportSpam() {
   ElMessage.success('已将该邮件标记为垃圾邮件')
+}
+
+async function handleToggleStar() {
+  if (!mail.value) return
+  try {
+    await toggleStar(mail.value.id)
+    mail.value.starred = !mail.value.starred
+    ElMessage.success(mail.value.starred ? '已标星' : '已取消标星')
+  } catch (err) {
+    ElMessage.error('操作失败')
+  }
+}
+
+async function handleArchive() {
+  if (!mail.value) return
+  try {
+    await ElMessageBox.confirm('确定要归档这封邮件吗？', '提示', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'info',
+    })
+  } catch { return }
+  try {
+    await archiveMail(mail.value.id)
+    ElMessage.success('邮件已归档')
+    router.push('/inbox')
+  } catch (err) {
+    ElMessage.error('归档失败：' + (err.response?.data?.error || err.message))
+  }
+}
+
+async function handleMoveTo(folder) {
+  if (!mail.value) return
+  const labels = { INBOX: '收件箱', SPAM: '垃圾邮件', ARCHIVE: '归档', TRASH: '废纸篓' }
+  const label = labels[folder] || folder
+  try {
+    await ElMessageBox.confirm(`确定要将邮件移动到「${label}」吗？`, '移动邮件', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'info',
+    })
+  } catch { return }
+  try {
+    await moveToFolder(mail.value.id, folder)
+    ElMessage.success(`邮件已移动到「${label}」`)
+    if (folder === 'TRASH') {
+      router.push('/trash')
+    } else {
+      router.push('/inbox')
+    }
+  } catch (err) {
+    ElMessage.error('移动失败：' + (err.response?.data?.error || err.message))
+  }
+}
+
+async function handleToggleRead() {
+  if (!mail.value) return
+  try {
+    await toggleRead(mail.value.id)
+    mail.value.readFlag = !mail.value.readFlag
+    ElMessage.success(mail.value.readFlag ? '已标记为已读' : '已标记为未读')
+  } catch (err) {
+    ElMessage.error('操作失败')
+  }
 }
 
 // 风险等级颜色
@@ -126,7 +282,31 @@ function getPriorityColor(level) {
       <div class="detail-header">
         <el-button text :icon="ArrowLeft" @click="goBack">返回</el-button>
         <h3 class="detail-subject">{{ mail.subject }}</h3>
-        <div style="display: flex; gap: 8px">
+        <div style="display: flex; gap: 8px; align-items: center">
+          <el-button text size="small" @click="handleToggleStar" :title="mail.starred ? '取消标星' : '标星'">
+            <el-icon :color="mail.starred ? '#e6a23c' : '#c0c4cc'" :size="18">
+              <StarFilled v-if="mail.starred" /><Star v-else />
+            </el-icon>
+          </el-button>
+          <el-button size="small" @click="handleToggleRead">
+            {{ mail.readFlag ? '标记未读' : '标记已读' }}
+          </el-button>
+          <el-dropdown @command="handleMoveTo">
+            <el-button size="small">
+              移动到 <el-icon><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="INBOX">📥 收件箱</el-dropdown-item>
+                <el-dropdown-item command="ARCHIVE">📦 归档</el-dropdown-item>
+                <el-dropdown-item command="SPAM">🚫 垃圾邮件</el-dropdown-item>
+                <el-dropdown-item command="TRASH">🗑️ 废纸篓</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-button type="info" plain size="small" @click="handleArchive">
+            <el-icon><Box /></el-icon> 归档
+          </el-button>
           <el-button type="danger" plain size="small" :icon="WarningFilled" @click="handleReportSpam">
             举报垃圾
           </el-button>
@@ -188,8 +368,41 @@ function getPriorityColor(level) {
       <el-divider />
 
       <!-- 正文 -->
-      <div class="detail-body">
-        <pre>{{ mail.content }}</pre>
+      <div class="detail-body" v-html="safeContent"></div>
+
+      <!-- 附件区域 -->
+      <div v-if="attachments.length > 0" class="attachment-section">
+        <el-divider />
+        <div class="attachment-title">
+          <el-icon><Paperclip /></el-icon> 附件（{{ attachments.length }}）
+        </div>
+        <div class="attachment-list">
+          <div
+            v-for="(att, idx) in attachments"
+            :key="idx"
+            class="attachment-item"
+          >
+            <div class="attachment-icon">
+              <span v-if="att.isImage">🖼️</span>
+              <span v-else-if="att.isPdf">📕</span>
+              <span v-else-if="att.isDoc">📝</span>
+              <span v-else>📄</span>
+            </div>
+            <div class="attachment-info">
+              <span class="attachment-name">{{ att.name }}</span>
+              <span class="attachment-type">.{{ att.ext }}</span>
+            </div>
+            <el-button
+              text
+              type="primary"
+              size="small"
+              class="attachment-download"
+              @click.stop="handleDownload"
+            >
+              <el-icon><Download /></el-icon> 下载
+            </el-button>
+          </div>
+        </div>
       </div>
 
       <el-divider />
@@ -199,7 +412,7 @@ function getPriorityColor(level) {
         <el-button type="primary" @click="handleReply">
           <el-icon><Back /></el-icon> 回复
         </el-button>
-        <el-button @click="handleReply">转发</el-button>
+        <el-button @click="handleForward">转发</el-button>
         <el-button
           type="success"
           :loading="summaryLoading"
@@ -321,5 +534,64 @@ function getPriorityColor(level) {
 .detail-actions {
   display: flex;
   gap: 12px;
+}
+
+/* 附件区域 */
+.attachment-section {
+  margin: 8px 0 16px;
+}
+.attachment-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 12px;
+}
+.attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  min-width: 220px;
+  transition: all 0.2s;
+}
+.attachment-item:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+.attachment-icon {
+  font-size: 22px;
+}
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.attachment-name {
+  font-size: 13px;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-type {
+  font-size: 11px;
+  color: #909399;
+  text-transform: uppercase;
+}
+.attachment-download {
+  flex-shrink: 0;
+  font-size: 12px;
 }
 </style>

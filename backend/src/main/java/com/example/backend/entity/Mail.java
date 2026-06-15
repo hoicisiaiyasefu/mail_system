@@ -133,6 +133,10 @@ public class Mail {
     @Column(name = "attachment_path", length = 500)
     private String attachmentPath;
 
+    // ======= 回复链关联 =======
+    @Column(name = "in_reply_to_id")
+    private Long inReplyToId;
+
 
     @PrePersist
     void prePersist() {

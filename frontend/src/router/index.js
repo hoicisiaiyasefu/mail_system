@@ -57,6 +57,36 @@ const router = createRouter({
       component: () => import('@/views/DraftsView.vue'),
       meta: { layout: 'mail', title: '草稿箱' },
     },
+    {
+      path: '/trash',
+      name: 'trash',
+      component: () => import('@/views/TrashView.vue'),
+      meta: { layout: 'mail', title: '废纸篓' },
+    },
+    {
+      path: '/starred',
+      name: 'starred',
+      component: () => import('@/views/StarredView.vue'),
+      meta: { layout: 'mail', title: '星标邮件' },
+    },
+    {
+      path: '/archive',
+      name: 'archive',
+      component: () => import('@/views/ArchiveView.vue'),
+      meta: { layout: 'mail', title: '归档' },
+    },
+    {
+      path: '/contacts',
+      name: 'contacts',
+      component: () => import('@/views/ContactsView.vue'),
+      meta: { layout: 'mail', title: '通讯录' },
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/SettingsView.vue'),
+      meta: { layout: 'mail', title: '设置' },
+    },
   ],
 })
 

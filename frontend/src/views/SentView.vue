@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailList, deleteMail } from '@/api/mail'
+import { getMailList, batchDelete } from '@/api/mail'
 
 const router = useRouter()
 
@@ -12,25 +12,15 @@ const selectedMails = ref([])
 const searchKeyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
+const totalElements = ref(0)
 
-// 搜索过滤后的邮件列表
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.toLowerCase().trim()
-  if (!kw) return mailList.value
-  return mailList.value.filter(
-    (m) =>
-      (m.to || '').toLowerCase().includes(kw) ||
-      (m.subject || '').toLowerCase().includes(kw),
-  )
-})
-
-// 加载已发送列表（目前从收件箱中筛选 SENT 文件夹的邮件）
 async function loadSent() {
   loading.value = true
   try {
-    const res = await getMailList('SENT')
+    const res = await getMailList('SENT', currentPage.value - 1, pageSize.value)
     mailList.value = res.data.mails || []
+    totalElements.value = res.data.totalElements || 0
   } catch (err) {
     ElMessage.error('加载已发送邮件失败')
   } finally {
@@ -40,11 +30,15 @@ async function loadSent() {
 
 onMounted(loadSent)
 
+watch(currentPage, () => loadSent())
+watch(pageSize, () => { currentPage.value = 1; loadSent() })
+
 function handleSelect(selection) {
   selectedMails.value = selection
 }
 
 function handleRefresh() {
+  currentPage.value = 1
   loadSent()
   ElMessage.success('刷新成功')
 }
@@ -66,19 +60,15 @@ async function handleDelete() {
 
   loading.value = true
   const ids = selectedMails.value.map((m) => m.id)
-  let deletedCount = 0
-  for (const id of ids) {
-    try {
-      await deleteMail(id)
-      deletedCount++
-    } catch (err) {
-      ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+  try {
+    const res = await batchDelete(ids)
+    if (res.data.count > 0) {
+      ElMessage.success(`已成功删除 ${res.data.count} 封邮件`)
+      selectedMails.value = []
+      loadSent()
     }
-  }
-  selectedMails.value = []
-  if (deletedCount > 0) {
-    ElMessage.success(`已成功删除 ${deletedCount} 封邮件`)
-    loadSent()
+  } catch (err) {
+    ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
   }
   loading.value = false
 }
@@ -95,7 +85,6 @@ function handleCompose() {
 <template>
   <div>
     <div class="mail-list-card">
-      <!-- 工具栏 -->
       <div class="mail-toolbar">
         <div style="display: flex; gap: 8px">
           <el-button type="primary" @click="handleCompose">
@@ -121,9 +110,8 @@ function handleCompose() {
         />
       </div>
 
-      <!-- 列表 -->
       <el-table
-        :data="filteredList"
+        :data="mailList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"
@@ -139,9 +127,7 @@ function handleCompose() {
         </el-table-column>
         <el-table-column label="收件人" width="200">
           <template #default="{ row }">
-            <div>
-              <div>{{ row.to }}</div>
-            </div>
+            <div>{{ row.to }}</div>
           </template>
         </el-table-column>
         <el-table-column label="主题" min-width="320">
@@ -161,12 +147,11 @@ function handleCompose() {
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <div style="display: flex; justify-content: flex-end; padding: 12px 16px">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :total="mailList.length"
+          :total="totalElements"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
           small

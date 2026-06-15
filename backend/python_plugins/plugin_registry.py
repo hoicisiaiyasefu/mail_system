@@ -161,12 +161,9 @@ class PluginRegistry:
         )
 
         if self._llm_provider:
-            connected = self._llm_provider.test_connection()
-            if not connected:
-                logger.warning("LLM 连接失败，大模型功能不可用")
-                self._llm_provider = None
+            logger.info(f"LLM 已就绪: {llm_cfg.get('model')} @ {llm_cfg.get('base_url', 'default')}")
         else:
-            logger.info("未配置 API Key，大模型功能已禁用")
+            logger.warning("LLM 初始化失败，大模型功能不可用，将使用降级方案")
 
     def _load_plugin(self, plugin_name: str, plugin_config: Dict[str, Any]) -> None:
         """

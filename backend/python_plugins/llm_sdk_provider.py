@@ -335,6 +335,8 @@ def create_llm_provider(api_key: str,
     """
     创建 LLM 服务提供商实例
 
+    优先使用 OpenAI SDK，若 SDK 不可用或连接失败则自动降级为 HTTP 客户端。
+
     Args:
         api_key:  API 密钥（空字符串则不创建）
         provider: 服务商类型 ('openai', 'custom')
@@ -350,9 +352,20 @@ def create_llm_provider(api_key: str,
         logger.info("未配置 LLM API Key，大模型功能已禁用")
         return None
 
+    # 优先尝试 OpenAI SDK
     if prefer_sdk and _HAS_OPENAI_SDK:
-        logger.info(f"使用 OpenAI SDK: {provider}/{model}")
-        return OpenAIProvider(api_key, provider, model, base_url)
+        logger.info(f"尝试 OpenAI SDK: {provider}/{model} @ {base_url}")
+        sdk_provider = OpenAIProvider(api_key, provider, model, base_url)
+        if sdk_provider.test_connection():
+            return sdk_provider
+        else:
+            logger.warning("OpenAI SDK 连接失败，降级为 HTTP 客户端")
+
+    # 回退：HTTP 客户端
+    logger.info(f"使用 HTTP 客户端: {provider}/{model} @ {base_url}")
+    http_provider = HttpLLMProvider(api_key, provider, model, base_url)
+    if http_provider.test_connection():
+        return http_provider
     else:
-        logger.info(f"使用 HTTP 客户端: {provider}/{model}")
-        return HttpLLMProvider(api_key, provider, model, base_url)
+        logger.error("HTTP LLM 连接也失败，大模型功能不可用")
+        return None

@@ -13,13 +13,21 @@ import sys
 import json
 import os
 import re
+import logging
 
 # ============================================================
-# 彻底抑制 stderr
+# 用 logging 替代彻底抑制 stderr，方便调试
+# 日志写入文件，stdout 仍只输出 JSON 结果
 # ============================================================
-_devnull_fd = os.open(os.devnull, os.O_WRONLY)
-os.dup2(_devnull_fd, 2)
-os.close(_devnull_fd)
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+    filename=os.path.join(LOG_DIR, 'bridge_summary.log'),
+    filemode='a',
+)
+log = logging.getLogger('bridge_summary')
 
 # 确保能找到同级模块
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

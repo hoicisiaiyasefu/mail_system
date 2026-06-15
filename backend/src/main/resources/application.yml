@@ -24,6 +24,10 @@ spring:
     init:
       mode: never
 
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:mail-system-jwt-secret-key-2026-super-secure-!!}
+
 # Python 智能插件配置
 plugin:
   python-path: python3
@@ -33,10 +37,10 @@ plugin:
 # 大模型（LLM）配置 - 可选，不填则自动降级为纯规则模式
 llm:
   enabled: true               # 是否启用大模型（需自行填写 api_key）
-  api-key: "sk-9YJuAZV8YA4ZjfKKqnggtNRxUTvT6bXEQrYWKT188TyVnTN8"                  # OpenAI / 兼容 API 的密钥
-  provider: openai             # openai | custom
-  model: deepseek-v4-pro
-  base-url: "https://www.micuapi.ai/v1"                 # 自定义 API 地址（vLLM/Ollama 等），留空用默认
+  api-key: "sk-0a395697cc454534b81261a3e9df4a96"                  # DeepSeek API Key（从 platform.deepseek.com 获取）
+  provider: openai             # DeepSeek 兼容 OpenAI 协议
+  model: deepseek-v4-pro         # DeepSeek 官方模型：deepseek-chat / deepseek-reasoner
+  base-url: "https://api.deepseek.com"                 # DeepSeek 官方 API 地址
 
 # 各插件专属配置（也可写在 plugins_config.json 中）
 plugins:

@@ -36,6 +36,9 @@ public class MailUser {
     @Column(length = 50)
     private String nickname;
 
+    @Column(columnDefinition = "text")
+    private String signature;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;

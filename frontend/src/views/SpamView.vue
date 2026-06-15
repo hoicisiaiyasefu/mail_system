@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailList, deleteMail } from '@/api/mail'
+import { getMailList, deleteMail, markNotSpam } from '@/api/mail'
 
 const router = useRouter()
 
@@ -12,25 +12,15 @@ const selectedMails = ref([])
 const searchKeyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
+const totalElements = ref(0)
 
-// 搜索过滤后的邮件列表
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.toLowerCase().trim()
-  if (!kw) return mailList.value
-  return mailList.value.filter(
-    (m) =>
-      (m.from || '').toLowerCase().includes(kw) ||
-      (m.subject || '').toLowerCase().includes(kw),
-  )
-})
-
-// 加载垃圾邮件列表（从收件箱中筛选 isSpam=true 的）
 async function loadSpam() {
   loading.value = true
   try {
-    const res = await getMailList('SPAM')
+    const res = await getMailList('SPAM', currentPage.value - 1, pageSize.value)
     mailList.value = res.data.mails || []
+    totalElements.value = res.data.totalElements || 0
   } catch (err) {
     ElMessage.error('加载垃圾邮件失败')
   } finally {
@@ -40,18 +30,34 @@ async function loadSpam() {
 
 onMounted(loadSpam)
 
+watch(currentPage, () => loadSpam())
+watch(pageSize, () => { currentPage.value = 1; loadSpam() })
+
 function handleSelect(selection) {
   selectedMails.value = selection
 }
 
-function handleNotSpam() {
+async function handleNotSpam() {
   if (selectedMails.value.length === 0) {
     ElMessage.warning('请先选择要标记的邮件')
     return
   }
+  loading.value = true
+  let count = 0
+  for (const m of selectedMails.value) {
+    try {
+      await markNotSpam(m.id)
+      count++
+    } catch (err) {
+      ElMessage.error(`标记失败：${err.response?.data?.error || err.message}`)
+    }
+  }
   selectedMails.value = []
-  ElMessage.success('已标记为非垃圾邮件（后端接口待完善）')
-  loadSpam()
+  if (count > 0) {
+    ElMessage.success(`已将 ${count} 封邮件移回收件箱`)
+    loadSpam()
+  }
+  loading.value = false
 }
 
 function handleDelete() {
@@ -71,6 +77,7 @@ function handleDelete() {
 }
 
 function handleRefresh() {
+  currentPage.value = 1
   loadSpam()
   ElMessage.success('刷新成功')
 }
@@ -93,7 +100,6 @@ function getScorePercent(score) {
 <template>
   <div>
     <div class="mail-list-card">
-      <!-- 工具栏 -->
       <div class="mail-toolbar">
         <div style="display: flex; gap: 8px">
           <el-button
@@ -116,7 +122,7 @@ function getScorePercent(score) {
         </div>
         <div style="display: flex; gap: 8px; align-items: center">
           <el-tag type="info" size="small">
-            🤖 AI 自动识别 · 共 {{ mailList.length }} 封
+            🤖 AI 自动识别 · 共 {{ totalElements }} 封
           </el-tag>
           <el-input
             v-model="searchKeyword"
@@ -128,9 +134,8 @@ function getScorePercent(score) {
         </div>
       </div>
 
-      <!-- 列表 -->
       <el-table
-        :data="filteredList"
+        :data="mailList"
         style="width: 100%"
         @selection-change="handleSelect"
         @row-click="handleViewMail"
@@ -175,12 +180,11 @@ function getScorePercent(score) {
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <div style="display: flex; justify-content: flex-end; padding: 12px 16px">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :total="mailList.length"
+          :total="totalElements"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
           small

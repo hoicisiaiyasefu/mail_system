@@ -8,6 +8,11 @@ import {
   Promotion,
   WarningFilled,
   DocumentCopy,
+  Delete,
+  Star,
+  Box,
+  Setting,
+  User,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -24,6 +29,11 @@ const activeMenu = computed(() => {
   if (path.startsWith('/sent')) return '/sent'
   if (path.startsWith('/drafts')) return '/drafts'
   if (path.startsWith('/spam')) return '/spam'
+  if (path.startsWith('/trash')) return '/trash'
+  if (path.startsWith('/archive')) return '/archive'
+  if (path.startsWith('/starred')) return '/starred'
+  if (path.startsWith('/contacts')) return '/contacts'
+  if (path.startsWith('/settings')) return '/settings'
   if (path.startsWith('/mail/')) return '/inbox'  // 邮件详情页高亮收件箱
   return '/inbox'
 })
@@ -72,6 +82,26 @@ function handleLogout() {
         <el-menu-item index="/spam">
           <el-icon><WarningFilled /></el-icon>
           <span>垃圾邮件</span>
+        </el-menu-item>
+        <el-menu-item index="/starred">
+          <el-icon><Star /></el-icon>
+          <span>星标邮件</span>
+        </el-menu-item>
+        <el-menu-item index="/archive">
+          <el-icon><Box /></el-icon>
+          <span>归档</span>
+        </el-menu-item>
+        <el-menu-item index="/trash">
+          <el-icon><Delete /></el-icon>
+          <span>废纸篓</span>
+        </el-menu-item>
+        <el-menu-item index="/contacts">
+          <el-icon><User /></el-icon>
+          <span>通讯录</span>
+        </el-menu-item>
+        <el-menu-item index="/settings">
+          <el-icon><Setting /></el-icon>
+          <span>设置</span>
         </el-menu-item>
       </el-menu>
     </aside>

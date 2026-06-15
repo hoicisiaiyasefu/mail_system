@@ -1,70 +1,55 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
+import { Delete, Refresh, DeleteFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMailList, deleteDraft } from '@/api/mail'
+import { getMailList, permanentDelete, emptyTrash } from '@/api/mail'
 
 const router = useRouter()
 
 const mailList = ref([])
 const selectedMails = ref([])
-const searchKeyword = ref('')
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const totalElements = ref(0)
 
-async function loadDrafts() {
+async function loadTrash() {
   loading.value = true
   try {
-    const res = await getMailList('DRAFT', currentPage.value - 1, pageSize.value)
+    const res = await getMailList('TRASH', currentPage.value - 1, pageSize.value)
     mailList.value = (res.data.mails || []).map((m) => ({
       ...m,
       date: m.receivedAt || '',
-      preview: (m.content || '').substring(0, 80),
+      preview: (m.summary || m.subject || '').substring(0, 80),
     }))
     totalElements.value = res.data.totalElements || 0
   } catch (err) {
-    ElMessage.error('加载草稿箱失败')
+    ElMessage.error('加载废纸篓失败')
   } finally {
     loading.value = false
   }
 }
 
-onMounted(loadDrafts)
+onMounted(loadTrash)
 
-watch(currentPage, () => loadDrafts())
-watch(pageSize, () => { currentPage.value = 1; loadDrafts() })
+watch(currentPage, () => loadTrash())
+watch(pageSize, () => { currentPage.value = 1; loadTrash() })
 
 function handleSelect(selection) {
   selectedMails.value = selection
 }
 
-function handleEditDraft(row) {
-  // 跳转写信页并传递草稿数据
-  router.push({
-    path: '/compose',
-    query: {
-      draftId: row.id,
-      to: row.to,
-      subject: row.subject,
-      content: row.content,
-      cc: row.ccAddresses || '',
-    },
-  })
-}
-
-async function handleDelete() {
+async function handlePermanentDelete() {
   if (selectedMails.value.length === 0) {
-    ElMessage.warning('请先选择要删除的草稿')
+    ElMessage.warning('请先选择要彻底删除的邮件')
     return
   }
   try {
     await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedMails.value.length} 封草稿吗？`,
-      '提示',
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' },
+      `确定要彻底删除选中的 ${selectedMails.value.length} 封邮件吗？此操作不可恢复！`,
+      '警告',
+      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'error' },
     )
   } catch {
     return
@@ -72,30 +57,49 @@ async function handleDelete() {
 
   loading.value = true
   const ids = selectedMails.value.map((m) => m.id)
-  let deletedCount = 0
   for (const id of ids) {
     try {
-      await deleteDraft(id)
-      deletedCount++
+      await permanentDelete(id)
     } catch (err) {
       ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
     }
   }
   selectedMails.value = []
-  if (deletedCount > 0) {
-    ElMessage.success(`已删除 ${deletedCount} 封草稿`)
-    loadDrafts()
-  }
+  ElMessage.success('已彻底删除')
+  loadTrash()
   loading.value = false
 }
 
-function handleCompose() {
-  router.push('/compose')
+async function handleEmptyTrash() {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清空废纸篓吗？所有邮件将被永久删除且不可恢复！',
+      '清空废纸篓',
+      { confirmButtonText: '确定清空', cancelButtonText: '取消', type: 'error' },
+    )
+  } catch {
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await emptyTrash()
+    ElMessage.success(res.data.message || '废纸篓已清空')
+    loadTrash()
+  } catch (err) {
+    ElMessage.error('清空失败：' + (err.response?.data?.error || err.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleViewMail(row) {
+  router.push(`/mail/${row.id}`)
 }
 
 function handleRefresh() {
   currentPage.value = 1
-  loadDrafts()
+  loadTrash()
   ElMessage.success('刷新成功')
 }
 </script>
@@ -105,34 +109,31 @@ function handleRefresh() {
     <div class="mail-list-card">
       <div class="mail-toolbar">
         <div style="display: flex; gap: 8px">
-          <el-button type="primary" @click="handleCompose">
-            <el-icon><EditPen /></el-icon> 写信
-          </el-button>
           <el-button
             type="danger"
             :disabled="selectedMails.length === 0"
-            @click="handleDelete"
+            @click="handlePermanentDelete"
           >
-            <el-icon><Delete /></el-icon> 删除
+            <el-icon><Delete /></el-icon> 彻底删除
           </el-button>
-          <el-button @click="handleRefresh">
+          <el-button
+            type="danger"
+            plain
+            @click="handleEmptyTrash"
+          >
+            <el-icon><DeleteFilled /></el-icon> 清空废纸篓
+          </el-button>
+          <el-button @click="handleRefresh" :loading="loading">
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
         </div>
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索草稿..."
-          :prefix-icon="Search"
-          style="width: 260px"
-          clearable
-        />
       </div>
 
       <el-table
         :data="mailList"
         style="width: 100%"
         @selection-change="handleSelect"
-        @row-click="handleEditDraft"
+        @row-click="handleViewMail"
         stripe
         highlight-current-row
         v-loading="loading"
@@ -140,29 +141,30 @@ function handleRefresh() {
         <el-table-column type="selection" width="45" />
         <el-table-column label="" width="40">
           <template #default>
-            <el-tag size="small" type="warning">草稿</el-tag>
+            <span>🗑️</span>
           </template>
         </el-table-column>
-        <el-table-column label="收件人" width="220">
+        <el-table-column label="发件人/收件人" width="220">
           <template #default="{ row }">
-            <span :style="{ color: row.to ? '#303133' : '#c0c4cc' }">
-              {{ row.to || '（未填写收件人）' }}
-            </span>
+            <div style="font-size: 13px">
+              <div>发：{{ row.from }}</div>
+              <div style="color: #909399">收：{{ row.to }}</div>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column label="主题" min-width="300">
+        <el-table-column label="主题" min-width="320">
           <template #default="{ row }">
             <div style="display: flex; align-items: center; gap: 8px">
-              <span>{{ row.subject || '（无主题）' }}</span>
-              <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px">
-                — {{ row.preview || '' }}
+              <span>{{ row.subject }}</span>
+              <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px">
+                — {{ row.preview }}
               </span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="最后编辑" width="170" align="right">
+        <el-table-column label="时间" width="170" align="right">
           <template #default="{ row }">
-            <span style="color: #909399; font-size: 13px">{{ row.date || '' }}</span>
+            <span style="color: #909399; font-size: 13px">{{ row.date }}</span>
           </template>
         </el-table-column>
       </el-table>
