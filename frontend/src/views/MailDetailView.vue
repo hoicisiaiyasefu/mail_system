@@ -281,7 +281,18 @@ function getPriorityColor(level) {
       <!-- 标题栏 -->
       <div class="detail-header">
         <el-button text :icon="ArrowLeft" @click="goBack">返回</el-button>
-        <h3 class="detail-subject">{{ mail.subject }}</h3>
+        <div class="detail-subject-area">
+          <el-tag
+            v-if="mail.isSpam"
+            type="danger"
+            size="small"
+            effect="dark"
+            style="margin-right: 8px"
+          >
+            垃圾邮件
+          </el-tag>
+          <h3 class="detail-subject">{{ mail.subject }}</h3>
+        </div>
         <div style="display: flex; gap: 8px; align-items: center">
           <el-button text size="small" @click="handleToggleStar" :title="mail.starred ? '取消标星' : '标星'">
             <el-icon :color="mail.starred ? '#e6a23c' : '#c0c4cc'" :size="18">
@@ -441,11 +452,16 @@ function getPriorityColor(level) {
   margin-bottom: 16px;
 }
 
+.detail-subject-area {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin: 0 20px;
+}
 .detail-subject {
   font-size: 20px;
   color: #303133;
-  flex: 1;
-  margin: 0 20px;
+  margin: 0;
 }
 
 .ai-tags-bar {

@@ -186,6 +186,29 @@ async function handleDelete() {
   loading.value = false
 }
 
+// 单行删除
+async function handleDeleteSingle(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除邮件"${row.subject}"吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+  loading.value = true
+  try {
+    await deleteMail(row.id)
+    ElMessage.success('删除成功')
+    loadInbox()
+    pollUnreadCount()
+  } catch (err) {
+    ElMessage.error('删除失败：' + (err.response?.data?.error || err.message))
+  }
+  loading.value = false
+}
+
 async function handleToggleStar(row) {
   try {
     await toggleStar(row.id)
@@ -205,6 +228,7 @@ function handleCompose() {
 }
 
 function tableRowClassName({ row }) {
+  if (row.isSpam) return 'spam-row'
   return row.isRead ? '' : 'unread-row'
 }
 
@@ -216,6 +240,19 @@ function getPriorityColor(level) {
 
 <template>
   <div>
+    <!-- ========== 搜索框（页面顶部） ========== -->
+    <div class="search-bar">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索邮件 — 支持发件人、主题、内容..."
+        :prefix-icon="Search"
+        clearable
+        size="large"
+        @input="onSearchInput"
+        @clear="handleRefresh"
+      />
+    </div>
+
     <!-- 新邮件通知横幅 -->
     <div v-if="showNewMailTip" class="new-mail-banner" @click="dismissTip">
       <span>📬 {{ unreadCount > 0 ? `您有 ${unreadCount} 封未读邮件，点击刷新查看` : '检查新邮件中...' }}</span>
@@ -273,6 +310,19 @@ function getPriorityColor(level) {
         v-loading="loading"
       >
         <el-table-column type="selection" width="45" />
+
+        <!-- 已读/未读状态圆点 -->
+        <el-table-column label="状态" width="60" align="center">
+          <template #default="{ row }">
+            <span
+              class="status-dot"
+              :class="row.isRead ? 'status-read' : 'status-unread'"
+              :title="row.isRead ? '已读' : '未读'"
+              @click.stop="row.isRead = !row.isRead"
+              style="cursor: pointer"
+            ></span>
+          </template>
+        </el-table-column>
         <el-table-column label="" width="40" align="center">
           <template #default="{ row }">
             <span
@@ -312,7 +362,7 @@ function getPriorityColor(level) {
               <span style="color: #909399; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px">
                 — {{ row.summary || row.subject }}
               </span>
-              <el-tag v-if="row.isSpam" type="danger" size="small">垃圾</el-tag>
+              <el-tag v-if="row.isSpam" type="danger" size="small" effect="dark">垃圾邮件</el-tag>
               <el-tag v-if="row.riskLevel && row.riskLevel !== 'safe'" type="warning" size="small">{{ row.riskLevel }}</el-tag>
             </div>
           </template>
@@ -326,6 +376,21 @@ function getPriorityColor(level) {
         <el-table-column label="时间" width="170" align="right">
           <template #default="{ row }">
             <span style="color: #909399; font-size: 13px">{{ row.date }}</span>
+          </template>
+        </el-table-column>
+
+        <!-- 操作列 -->
+        <el-table-column label="操作" width="80" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              type="danger"
+              size="small"
+              text
+              :icon="Delete"
+              @click.stop="handleDeleteSingle(row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -346,6 +411,14 @@ function getPriorityColor(level) {
 </template>
 
 <style scoped>
+/* ===== 搜索框 ===== */
+.search-bar {
+  margin-bottom: 16px;
+}
+.search-bar .el-input {
+  max-width: 600px;
+}
+
 .new-mail-banner {
   display: flex;
   align-items: center;
@@ -366,5 +439,24 @@ function getPriorityColor(level) {
 }
 :deep(.unread-row) {
   background-color: #f0f7ff;
+}
+:deep(.spam-row) {
+  background-color: #fef0f0;
+}
+
+/* ===== 状态圆点 ===== */
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.status-read {
+  background-color: #67c23a;
+  box-shadow: 0 0 4px rgba(103, 194, 58, 0.5);
+}
+.status-unread {
+  background-color: #409eff;
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.5);
 }
 </style>
