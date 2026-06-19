@@ -1,0 +1,20 @@
+{
+  "llm": {
+    "enabled": true,
+    "api_key": "sk-9YJuAZV8YA4ZjfKKqnggtNRxUTvT6bXEQrYWKT188TyVnTN8",
+    "provider": "openai",
+    "model": "deepseek-v4-pro",
+    "base_url": "https://www.micuapi.ai/v1"
+  },
+  "plugins": {
+    "email_priority_plugin": {
+      "enabled": true
+    },
+    "security_ai_plugin": {
+      "enabled": true
+    },
+    "spam_ml_plugin": {
+      "enabled": true
+    }
+  }
+}
