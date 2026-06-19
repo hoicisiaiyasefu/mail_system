@@ -1,0 +1,184 @@
+[
+  {
+    "content": "端午节放假安排6月10日至12日共3天调休6月14日上班假期注意安全",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "高薪兼职日赚500到1000元当天结算，打字员刷单专员客服接待无需经验",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "网络安全意识培训已完成请查收培训总结报告公司安全基线提升至新水平",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "出售个人微信号实名认证成品号价格实惠长期售后保障",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "香港直邮正品代购护肤品化妆品香水比专柜低50%保证正品",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "加微信免费领取茅台酒一箱，正品保证假一赔十限量100箱",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "微信扫码进群领取红包雨，每天准时发放万元红包真实有效",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "新一代AI编程工具培训报名通知6月12至13日外部专家主讲名额有限",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "邀请好友注册奖励现金50元提现秒到账上不封顶多邀多得",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "免费算命八字取名风水调理在线大师一对一指点迷津消灾解难",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "澳门线上娱乐城火热上线，百家乐轮盘老虎机注册送888元彩金真人荷官",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "海外高薪工作年薪30万起包吃住，建筑工厨师服务员翻译签证有保障",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "数据库扩容方案评审会通知本周四下午讨论分库分表策略与读写分离方案",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "关于财务报销流程优化的通知启用电子发票自动识别减少手工填报提高效率",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "办公用品采购申请汇总请统计本季度需求文具类耗材类设备类预算已获批",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "网赚项目分享日入千元不是梦，零投资零风险只需手机操作导师一对一",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "您提交的Bug反馈5678已分析原因是高并发下数据库连接池配置不当已修复",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "不节食不运动一个月瘦20斤，天然植物减肥胶囊无效退款明星同款298元",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "论文初稿完成请合作者审阅并提出修改意见6月15日前反馈将投稿至ACL会议",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "法律合规培训通知DCPR标准更新新隐私政策需重新审阅签署时间下周五",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "新员工入职培训安排下周一9点A栋会议室携带身份证和学历证书复印件",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "集团内部调动申请流程说明条件需在原岗位满一年绩效良好经双方部门同意",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "Q3季度工作目标确认请提交KPI指标关键里程碑资源预算和风险应对预案",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  },
+  {
+    "content": "手机定位追踪软件下载，可监控微信QQ通话记录定位精准",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "养森中药热敷减肥包纯中药外敷不节食不运动月瘦10-30斤无效退款",
+    "subject": "",
+    "sender": "",
+    "label": 1,
+    "is_spam": true
+  },
+  {
+    "content": "关于协同办公平台升级的通知新增多人实时编辑功能修复文件上传失败问题",
+    "subject": "",
+    "sender": "",
+    "label": 0,
+    "is_spam": false
+  }
+]

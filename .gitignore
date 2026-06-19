@@ -1,37 +1,82 @@
-# === Node / Vite ===
-node_modules/
-dist/
-.vite/
-
-# === Java / Maven ===
-target/
-*.class
-*.jar
-*.war
-
-# === Python ===
-__pycache__/
-*.pyc
-.venv/
-venv/
-
-# === IDE ===
+# ==============================================
+# 1. 通用忽略（所有系统/编辑器）
+# ==============================================
+.DS_Store
+Thumbs.db
 .idea/
 .vscode/
-*.iml
 *.swp
 *.swo
 *~
+*.log
+logs/
+tmp/
+temp/
 
-# === OS ===
-.DS_Store
-Thumbs.db
-
-# === Env / Secrets ===
+# ==============================================
+# 2. 前端 Vue3 专用
+# ==============================================
+node_modules/
+dist/
+build/
 .env
 .env.local
-.env.*.local
-*.log
+npm-debug.log*
+yarn-debug.log*
 
-# === Claude ===
+# ==============================================
+# 3. 后端 Java SpringBoot 专用
+# ==============================================
+target/
+*.jar
+*.war
+.mvn/
+maven-wrapper.jar
+application-local.yml
+application-dev.yml
+
+# ==============================================
+# 4. Python 大模型 专用
+# ==============================================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+*.pth
+*.pyc
+*.egg-info/
+*.bin
+*.safetensors
+*.pt
+*.pth
+model/
+models/
+checkpoints/
+dataset/
+datasets/
+cache/
+*.h5
+
+# ==============================================
+# 5. 数据库 + 项目业务文件
+# ==============================================
+*.sql
+*.db
+*.dump
+mysql-data/
+upload/
+files/
+secret/
+keys/
+
+# Postman
+.postman/
+*.postman_collection.json
+*.postman_environment.json
+postman/
+
+# Claude
 .claude/

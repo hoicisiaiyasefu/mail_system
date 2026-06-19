@@ -1,0 +1,158 @@
+[
+  {
+    "subject": "绩效考核结果已公布，请查看并确认",
+    "content": "上半年绩效考核结果已通过OA公布。本周五前登录查看确认。这是薪资调整和晋升的重要依据。",
+    "sender": "hr-performance@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "【紧急会议】董事会临时会议，今晚8点",
+    "content": "董事长通知今晚8点紧急董事会，讨论收购事宜。所有VP以上必须参加，不得缺席。会议链接7:30发送。",
+    "sender": "board-secretary@company.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "Google日历提醒：明天是朋友的生日",
+    "content": "明天6月15日是「李华」的生日。您备注了\"记得送礼物\"。点击发送生日祝福或修改提醒设置。",
+    "sender": "calendar@google.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "您的快递已签收，点击查看签收详情",
+    "content": "快递(单号：JD1234567890)已由本人签收。如确认无误请忽略。有疑问联系快递员：13800138000。",
+    "sender": "express-notify@jd.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "公司内部技术分享活动通知",
+    "content": "本月技术分享6月18日下午3点培训室举行，主题《Kubernetes实战经验分享》，由运维组张工主讲。不强制参加。",
+    "sender": "tech-community@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "告警：SSL证书将在24小时内过期",
+    "content": "紧急：api.company.com SSL证书明天中午到期。过期将导致所有API调用失败。请运维组立即更新。",
+    "sender": "ssl-monitor@company.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "知乎：您关注的「人工智能」话题有新回答",
+    "content": "话题「人工智能」下，「AI研究者」回答了\"ChatGPT底层原理\"，获500+赞。点击查看完整回答。",
+    "sender": "notify@zhihu.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "【立即处理】合同审核超时，客户威胁取消合作",
+    "content": "销售部紧急：大客户合同在审批流程中停留超过48小时。客户威胁今天内不完成审批就取消合作，金额300万。",
+    "sender": "sales-vp@company.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "您的支付宝年度账单已生成",
+    "content": "2025年度支付宝账单已生成。今年餐饮花费最多，其次交通出行。点击查看年度消费关键词和完整账单。",
+    "sender": "service@alipay.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "茶水间新增咖啡机，请大家爱惜使用",
+    "content": "三楼茶水间新添全自动咖啡机，支持美式、拿铁等口味。请使用后清理。行政部会及时补充咖啡豆。",
+    "sender": "admin@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "爱奇艺：有声书《未来简史》已更新",
+    "content": "您订阅的有声书《未来简史》第12章已更新。主讲人：知名配音演员。时长45分钟。点击立即收听。",
+    "sender": "notify@iqiyi.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "本周工作总结及下周计划",
+    "content": "附件是本周工作总结和下周计划。本周完成用户管理模块开发，修复3个Bug。下周开始订单模块设计。",
+    "sender": "dev-lead@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "推荐一篇关于微服务架构的好文章",
+    "content": "InfoQ上看到一篇微服务架构演进文章，作者分享了从单体迁移到微服务的经验。与我们当前架构方向契合。链接附上。",
+    "sender": "colleague@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "内部审计通知：财务部下周开始年度审计",
+    "content": "根据合规要求，内部审计团队下周一开始年度审计。请保留所有票据和审批单。周期约两周。",
+    "sender": "audit@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "关于公司班车路线调整的征求意见",
+    "content": "公司考虑优化班车路线，现有A、B方案。A方案新增通州方向，B方案优化亦庄方向。内网投票截止下周五。",
+    "sender": "admin-services@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "安全告警：发现数据泄露风险，请立即排查",
+    "content": "安全中心检测到外部IP异常数据库访问行为。疑似数据泄露，涉及用户信息表和订单表。请安全团队立即介入排查。",
+    "sender": "security@company.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "重要客户来访安排确认",
+    "content": "日本客户代表团下周一抵达三天。行程包括工厂参观、技术交流。关系到明年续约，请高度重视。",
+    "sender": "business-dev@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "机房空调更新维护通知",
+    "content": "本周六凌晨2:00-5:00对机房空调例行维护。期间温度微升但不影响设备运行。运维已做好散热预案。",
+    "sender": "datacenter@company.com",
+    "priority": "MEDIUM"
+  },
+  {
+    "subject": "安全漏洞修复：请更新依赖库至最新版本",
+    "content": "发现log4j库存在CVE-2025-1234高危漏洞(CVSS 9.8)。请所有Java项目下周三前更新到2.24.1以上。",
+    "sender": "security-team@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "您有一份来自LinkedIn的好友邀请",
+    "content": "「张三」向您发送了LinkedIn好友邀请。张三在阿里巴巴担任高级工程师。点击查看完整职业档案。",
+    "sender": "notifications@linkedin.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "服务器扩容申请已获批",
+    "content": "好消息！服务器扩容预算获批，总预算50万元，新增5台高性能服务器。请技术团队尽快下单采购。",
+    "sender": "it-budget@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "CEO紧急指令：客户演示提前到明天上午",
+    "content": "各位，CEO发来消息，原定周五的客户演示临时改到明天上午10点。请所有相关同事今晚务必把PPT和Demo准备好。",
+    "sender": "ceo-office@company.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "银行通知：公司账户出现大额异常转账",
+    "content": "监测到您公司基本账户在14:22分发生500万元转账操作。如非本人操作，请立即联系银行冻结账户并报警。",
+    "sender": "bank-alert@ccb.com",
+    "priority": "CRITICAL"
+  },
+  {
+    "subject": "项目里程碑提醒：本周五需要提交设计文档",
+    "content": "按项目计划，本周五是设计文档交付节点。周四下班前将初稿发我review。逾期影响考核。",
+    "sender": "pm@company.com",
+    "priority": "HIGH"
+  },
+  {
+    "subject": "您关注的股票今日涨幅3.5%",
+    "content": "您关注的「贵州茅台」(600519)今日收盘涨幅3.5%，报收1850元。板块走强，北向资金持续流入。点击查看分析报告。",
+    "sender": "stock-alert@invest-app.com",
+    "priority": "LOW"
+  },
+  {
+    "subject": "【消防警报】大楼火警触发，请立即疏散",
+    "content": "大楼消防报警系统已触发。请立即停止工作，从最近消防通道有序疏散。不要使用电梯！这不是演习！",
+    "sender": "building-safety@company.com",
+    "priority": "CRITICAL"
+  }
+]

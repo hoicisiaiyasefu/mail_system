@@ -1,0 +1,6 @@
+mail_system/backend/src/resources/application.yml  
+
+jpa:
+    hibernate:
+      ddl-auto: validate --> update
+开发阶段可以使用update方便本地测试 后续上线记得改回validate
