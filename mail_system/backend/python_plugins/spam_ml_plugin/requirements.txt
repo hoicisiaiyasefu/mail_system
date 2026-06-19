@@ -1,5 +1,0 @@
-# ML 垃圾邮件检测插件依赖
-# 核心依赖（零额外依赖即可运行基础功能）
-# 可选依赖（增强功能）
-# scikit-learn  # 可选：使用 sklearn 的 TF-IDF 和 NB 替代内置实现
-# onnxruntime  # 可选：DLL 端 ONNX 模型推理
