@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getMailList, moveToFolder } from '@/api/mail'
+import { getCache, setCache } from '@/utils/cache'
 
 const router = useRouter()
 
@@ -15,20 +16,32 @@ const pageSize = ref(20)
 const totalElements = ref(0)
 
 async function loadArchive() {
+  const cached = getCache('ARCHIVE')
+  if (cached) {
+    mailList.value = (cached.mails || []).map(normalize)
+    totalElements.value = cached.totalElements || 0
+  }
+
   loading.value = true
   try {
     const res = await getMailList('ARCHIVE', currentPage.value - 1, pageSize.value)
-    mailList.value = (res.data.mails || []).map((m) => ({
-      ...m,
-      date: m.receivedAt || '',
-      preview: (m.summary || m.subject || '').substring(0, 80),
-      isRead: m.readFlag !== undefined ? m.readFlag : false,
-    }))
-    totalElements.value = res.data.totalElements || 0
+    const data = res.data
+    mailList.value = (data.mails || []).map(normalize)
+    totalElements.value = data.totalElements || 0
+    setCache('ARCHIVE', { mails: data.mails, totalElements: data.totalElements })
   } catch (err) {
-    ElMessage.error('加载归档邮件失败')
+    if (!cached) ElMessage.error('加载归档邮件失败')
   } finally {
     loading.value = false
+  }
+}
+
+function normalize(m) {
+  return {
+    ...m,
+    date: m.receivedAt || '',
+    preview: (m.summary || m.subject || '').substring(0, 80),
+    isRead: m.readFlag !== undefined ? m.readFlag : false,
   }
 }
 

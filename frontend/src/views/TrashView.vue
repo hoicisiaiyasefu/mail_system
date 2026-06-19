@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Delete, Refresh, DeleteFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMailList, permanentDelete, emptyTrash } from '@/api/mail'
+import { getCache, setCache } from '@/utils/cache'
 
 const router = useRouter()
 
@@ -15,19 +16,31 @@ const pageSize = ref(20)
 const totalElements = ref(0)
 
 async function loadTrash() {
+  const cached = getCache('TRASH')
+  if (cached) {
+    mailList.value = (cached.mails || []).map(normalize)
+    totalElements.value = cached.totalElements || 0
+  }
+
   loading.value = true
   try {
     const res = await getMailList('TRASH', currentPage.value - 1, pageSize.value)
-    mailList.value = (res.data.mails || []).map((m) => ({
-      ...m,
-      date: m.receivedAt || '',
-      preview: (m.summary || m.subject || '').substring(0, 80),
-    }))
-    totalElements.value = res.data.totalElements || 0
+    const data = res.data
+    mailList.value = (data.mails || []).map(normalize)
+    totalElements.value = data.totalElements || 0
+    setCache('TRASH', { mails: data.mails, totalElements: data.totalElements })
   } catch (err) {
-    ElMessage.error('加载废纸篓失败')
+    if (!cached) ElMessage.error('加载废纸篓失败')
   } finally {
     loading.value = false
+  }
+}
+
+function normalize(m) {
+  return {
+    ...m,
+    date: m.receivedAt || '',
+    preview: (m.summary || m.subject || '').substring(0, 80),
   }
 }
 

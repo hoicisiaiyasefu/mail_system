@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getInboxList, deleteMail, getUnreadCount, searchMail, batchDelete, batchMarkAsRead, toggleStar } from '@/api/mail'
+import { getCache, setCache } from '@/utils/cache'
 
 const router = useRouter()
 
@@ -21,27 +22,44 @@ const unreadCount = ref(0)
 const showNewMailTip = ref(false)
 let pollingTimer = null
 
-// 加载收件箱数据（服务端分页）
+// 加载收件箱数据（缓存优先：先渲染缓存，再请求后端更新）
 async function loadInbox() {
+  // 先读缓存，立即渲染
+  const cached = getCache('INBOX')
+  if (cached) {
+    mailList.value = (cached.mails || []).map(normalizeMail)
+    totalElements.value = cached.totalElements || 0
+  }
+
   loading.value = true
   try {
     const res = await getInboxList(currentPage.value - 1, pageSize.value)
     const data = res.data
-    mailList.value = (data.mails || []).map((m) => ({
-      ...m,
-      preview: (m.summary || m.subject || '').substring(0, 80),
-      date: m.receivedAt || '',
-      isRead: m.readFlag !== undefined ? m.readFlag : false,
-    }))
+    const mapped = (data.mails || []).map(normalizeMail)
+    mailList.value = mapped
     totalElements.value = data.totalElements || 0
+    // 后端返回成功后写入缓存
+    setCache('INBOX', { mails: data.mails, totalElements: data.totalElements })
   } catch (err) {
-    ElMessage.error('加载收件箱失败：' + (err.response?.data?.error || err.message))
+    // 如果有缓存数据则静默失败，否则提示错误
+    if (!cached) {
+      ElMessage.error('加载收件箱失败：' + (err.response?.data?.error || err.message))
+    }
   } finally {
     loading.value = false
   }
 }
 
-// 后端搜索（分页）
+function normalizeMail(m) {
+  return {
+    ...m,
+    preview: (m.summary || m.subject || '').substring(0, 80),
+    date: m.receivedAt || '',
+    isRead: m.readFlag !== undefined ? m.readFlag : false,
+  }
+}
+
+// 后端搜索（分页，结果也写入缓存）
 async function performSearch() {
   const kw = searchKeyword.value.trim()
   if (!kw) {
@@ -52,13 +70,9 @@ async function performSearch() {
   try {
     const res = await searchMail(kw, currentPage.value - 1, pageSize.value)
     const data = res.data
-    mailList.value = (data.mails || []).map((m) => ({
-      ...m,
-      preview: (m.summary || m.subject || '').substring(0, 80),
-      date: m.receivedAt || '',
-      isRead: m.readFlag !== undefined ? m.readFlag : false,
-    }))
+    mailList.value = (data.mails || []).map(normalizeMail)
     totalElements.value = data.totalElements || 0
+    setCache('INBOX_SEARCH', { mails: data.mails, totalElements: data.totalElements, keyword: kw })
   } catch (err) {
     ElMessage.error('搜索失败：' + (err.response?.data?.error || err.message))
   } finally {

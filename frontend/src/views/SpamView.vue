@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Search, Delete, Refresh, WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMailList, deleteMail, markNotSpam } from '@/api/mail'
+import { getCache, setCache } from '@/utils/cache'
 
 const router = useRouter()
 
@@ -16,13 +17,21 @@ const pageSize = ref(20)
 const totalElements = ref(0)
 
 async function loadSpam() {
+  const cached = getCache('SPAM')
+  if (cached) {
+    mailList.value = cached.mails || []
+    totalElements.value = cached.totalElements || 0
+  }
+
   loading.value = true
   try {
     const res = await getMailList('SPAM', currentPage.value - 1, pageSize.value)
-    mailList.value = res.data.mails || []
-    totalElements.value = res.data.totalElements || 0
+    const data = res.data
+    mailList.value = data.mails || []
+    totalElements.value = data.totalElements || 0
+    setCache('SPAM', { mails: data.mails, totalElements: data.totalElements })
   } catch (err) {
-    ElMessage.error('加载垃圾邮件失败')
+    if (!cached) ElMessage.error('加载垃圾邮件失败')
   } finally {
     loading.value = false
   }

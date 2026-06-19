@@ -65,9 +65,12 @@ export function getUnreadCount() {
   return api.get('/mail/unread-count')
 }
 
-/** 搜索邮件（分页） */
-export function searchMail(keyword, page = 0, size = 20) {
-  return api.get('/mail/search', { params: { keyword, page, size } })
+/** 搜索邮件（分页，支持 folder/from 筛选） */
+export function searchMail(keyword, page = 0, size = 20, folder, from) {
+  const params = { keyword, page, size }
+  if (folder) params.folder = folder
+  if (from) params.from = from
+  return api.get('/mail/search', { params })
 }
 
 // ============================================================
